@@ -2,7 +2,13 @@ import { fmtGal } from './calc';
 import type { DayResult } from './types';
 
 export default function Log({ chain, onOpen }: { chain: DayResult[]; onOpen: (date: string) => void }) {
-  if (!chain.length) return <p className="muted">No entries yet. Save your first day on the Entry screen.</p>;
+  if (!chain.length)
+    return (
+      <section className="card">
+        <h2>Log</h2>
+        <p>No days saved yet. Your days show here, month by month, once you save the first one on the Entry screen.</p>
+      </section>
+    );
 
   // Newest month first; days in order within the month, like the spreadsheet.
   const months = new Map<string, DayResult[]>();
@@ -14,10 +20,11 @@ export default function Log({ chain, onOpen }: { chain: DayResult[]; onOpen: (da
     new Date(Number(m.slice(0, 4)), Number(m.slice(5, 7)) - 1, 1).toLocaleString('en-US', { month: 'long', year: 'numeric' });
 
   return (
-    <div className="log">
+    <div className="screen log">
       {[...months.entries()].reverse().map(([m, days]) => (
         <section key={m} className="card">
           <h2>{monthName(m)}</h2>
+          <div className="tablewrap">
           <table>
             <thead>
               <tr><th>Day</th><th>On hand</th><th>Rec'd</th><th>Used</th><th>Lube</th><th>Water</th></tr>
@@ -35,6 +42,7 @@ export default function Log({ chain, onOpen }: { chain: DayResult[]; onOpen: (da
               ))}
             </tbody>
           </table>
+          </div>
         </section>
       ))}
       <p className="small muted">Tap a day to view or edit it. Later days recalculate automatically.</p>
