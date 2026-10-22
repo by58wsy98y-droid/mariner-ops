@@ -1,28 +1,24 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { computeChain, fmtGal, truckAlert } from './calc';
-import { backupFile, type AppData, type Store, type SyncState } from './storage';
-import type { Balances, DayEntry } from './types';
+import { computeChain, emptyDay, todayISO } from './calc';
+import { backupFile, pdfName, type AppData, type Store, type SyncState } from './storage';
+import { buildPdf, pdfLibFromWindow } from './pdf';
+import type { Balances, DayLog, Settings } from './types';
 import { useAsk } from './Confirm';
-import Today from './Today';
-import Log from './Log';
-import SettingsPage from './SettingsPage';
+import DayScreen from './DayScreen';
+import History from './History';
+import Setup from './Setup';
 
-type Screen = 'today' | 'log' | 'settings';
+type Screen = 'day' | 'history' | 'setup';
 const BACKUP_REMIND_DAYS = 7;
-
-export const todayStr = () => {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-};
 
 export default function App({ store }: { store: Store }) {
   const [data, setData] = useState<AppData>(store.initial);
   const dataRef = useRef(data); // always the latest, so saves never start from a stale copy
   const [sync, setSync] = useState<SyncState>({ where: 'account', loading: !store.ready, pending: 0, fallback: false });
-  const [screen, setScreen] = useState<Screen>('today');
-  const [date, setDate] = useState(todayStr);
-  const [showAlert, setShowAlert] = useState(true); // shown on open and after every save
+  const [screen, setScreen] = useState<Screen>('day');
+  const [date, setDate] = useState(todayISO);
   const [note, setNote] = useState('');
+  const [busy, setBusy] = useState('');
   const [ask, dialog] = useAsk();
 
   useEffect(
@@ -43,81 +39,80 @@ export default function App({ store }: { store: Store }) {
     else store.persist(prev, next);
   };
 
-  const s = data.settings;
-  const chain = useMemo(
-    () => computeChain(data.entries, s.start ?? { fuel: 0, lube: 0, water: 0 }),
-    [data.entries, s.start]
-  );
-  const latest = chain[chain.length - 1];
-  const alert = latest ? truckAlert(latest.fuel.onHand, s.capacity, s.truckSize, s.alertTrucks) : null;
+  const editDay = (day: string, fn: (d: DayLog) => DayLog) =>
+    change((d) => {
+      const cur = d.entries.find((e) => e.date === day) ?? emptyDay(day, d.settings);
+      const next = fn(cur);
+      return { ...d, entries: [...d.entries.filter((e) => e.date !== day), next].sort((a, b) => a.date.localeCompare(b.date)) };
+    });
+  const editSettings = (fn: (s: Settings) => Settings) => change((d) => ({ ...d, settings: fn(d.settings) }));
+  const editStart = (fn: (b: Balances) => Balances) => editSettings((s) => ({ ...s, start: fn(s.start) }));
+  const deleteDay = (day: string) => change((d) => ({ ...d, entries: d.entries.filter((e) => e.date !== day) }));
 
+  const s = data.settings;
+  const chain = useMemo(() => computeChain(data.entries, s), [data.entries, s]);
   const daysSinceBackup = s.lastBackup ? (Date.now() - Date.parse(s.lastBackup)) / 86400000 : Infinity;
   const needBackup = data.entries.length > 0 && daysSinceBackup > BACKUP_REMIND_DAYS;
   const waiting = sync.loading && !store.ready;
-
-  const saveEntry = (entry: DayEntry, start?: Balances) => {
-    change((d) => ({
-      settings: start ? { ...d.settings, start } : d.settings,
-      entries: [...d.entries.filter((e) => e.date !== entry.date), entry].sort((a, b) => a.date.localeCompare(b.date)),
-    }));
-    setShowAlert(true);
-  };
-
-  const deleteEntry = (day: string) => change((d) => ({ ...d, entries: d.entries.filter((e) => e.date !== day) }));
 
   const backup = async () => {
     setNote('');
     const { filename, text } = backupFile(dataRef.current);
     const result = await store.saveFile(filename, text);
-    if (result === 'saved') change((d) => ({ ...d, settings: { ...d.settings, lastBackup: new Date().toISOString() } }));
+    if (result === 'saved') editSettings((x) => ({ ...x, lastBackup: new Date().toISOString() }));
     if (result === 'unavailable') setNote("Couldn't save the backup file here. Try again in a minute.");
   };
 
-  const banners = (alert && showAlert) || needBackup || note;
+  const savePdf = async (dates: string[]) => {
+    setNote('');
+    const lib = pdfLibFromWindow();
+    if (!lib) {
+      setNote("The PDF maker didn't load. Check your signal, then close and reopen the page.");
+      return;
+    }
+    const d = dataRef.current;
+    const saved = dates.filter((x) => d.entries.some((e) => e.date === x));
+    if (!saved.length) return;
+    setBusy('Making PDF…');
+    try {
+      const bytes = buildPdf(lib, d, saved);
+      const result = await store.saveFile(pdfName(d, saved), bytes);
+      if (result === 'unavailable') setNote("Couldn't save the PDF here. Try again in a minute.");
+    } catch (e) {
+      setNote(`Couldn't make the PDF: ${(e as Error).message}`);
+    } finally {
+      setBusy('');
+    }
+  };
+
+  const go = (sc: Screen) => {
+    setScreen(sc);
+    window.scrollTo(0, 0);
+  };
 
   return (
     <div className="app">
       <header>
         <div className="wrap">
           <div className="top">
-            <h1>{s.boatName || 'Fuel Log'}</h1>
-            {latest && (
-              <div className="onhand">
-                <small>On hand</small> {fmtGal(latest.fuel.onHand)} gal
-              </div>
-            )}
+            <h1>Daily Engine Maintenance</h1>
+            <div className="boat">{s.boatName}</div>
           </div>
           <SyncLine s={sync} />
         </div>
       </header>
 
-      {banners && (
+      {(needBackup || note || busy) && (
         <div className="wrap banners">
-          {alert && showAlert && (
-            <div className="banner truck" role="alert">
-              <div>
-                <strong>
-                  Room for {alert.trucks} truck{alert.trucks > 1 ? 's' : ''} ({fmtGal(alert.gallons)} gal)
-                </strong>
-                <div className="small">
-                  On hand {fmtGal(alert.onHand)} · Room to full {fmtGal(alert.roomToFull)} · Alert at ≤{' '}
-                  {fmtGal(alert.threshold)} gal
-                </div>
-              </div>
-              <button className="ghost" onClick={() => setShowAlert(false)} aria-label="Dismiss">✕</button>
-            </div>
-          )}
+          {busy && <div className="banner note" role="status">{busy}</div>}
           {needBackup && (
             <div className="banner note">
-              <div>
-                {s.lastBackup ? `Last backup ${Math.floor(daysSinceBackup)} days ago.` : 'No backup yet.'} Keep a copy of
-                your log somewhere safe.
-              </div>
+              <div>{s.lastBackup ? `Last backup ${Math.floor(daysSinceBackup)} days ago.` : 'No backup yet.'} Keep a spare copy of your log.</div>
               <button onClick={backup}>Back up now</button>
             </div>
           )}
           {note && (
-            <div className="banner note">
+            <div className="banner warnbox" role="alert">
               <div>{note}</div>
               <button className="ghost" onClick={() => setNote('')} aria-label="Dismiss">✕</button>
             </div>
@@ -133,27 +128,22 @@ export default function App({ store }: { store: Store }) {
           </section>
         ) : (
           <>
-            {screen === 'today' && (
-              <Today data={data} date={date} setDate={setDate} onSave={saveEntry} onDelete={deleteEntry} ask={ask} />
+            {screen === 'day' && (
+              <DayScreen data={data} date={date} setDate={setDate} editDay={editDay} editStart={editStart} onDelete={deleteDay} onPdf={savePdf} ask={ask} />
             )}
-            {screen === 'log' && (
-              <Log
+            {screen === 'history' && (
+              <History
+                data={data}
                 chain={chain}
                 onOpen={(d) => {
                   setDate(d);
-                  setScreen('today');
+                  go('day');
                 }}
+                onPdf={savePdf}
               />
             )}
-            {screen === 'settings' && (
-              <SettingsPage
-                data={data}
-                sync={sync}
-                onChange={change}
-                onRestore={(d) => change(() => d, true)}
-                onBackup={backup}
-                ask={ask}
-              />
+            {screen === 'setup' && (
+              <Setup data={data} sync={sync} onSettings={editSettings} onRestore={(d) => change(() => d, true)} onBackup={backup} ask={ask} />
             )}
           </>
         )}
@@ -161,9 +151,9 @@ export default function App({ store }: { store: Store }) {
 
       <nav>
         <div className="wrap">
-          <button className={screen === 'today' ? 'on' : ''} onClick={() => setScreen('today')}>Entry</button>
-          <button className={screen === 'log' ? 'on' : ''} onClick={() => setScreen('log')}>Log</button>
-          <button className={screen === 'settings' ? 'on' : ''} onClick={() => setScreen('settings')}>Fuel / Settings</button>
+          <button className={screen === 'day' ? 'on' : ''} onClick={() => go('day')}>Day</button>
+          <button className={screen === 'history' ? 'on' : ''} onClick={() => go('history')}>History</button>
+          <button className={screen === 'setup' ? 'on' : ''} onClick={() => go('setup')}>Setup &amp; Backup</button>
         </div>
       </nav>
       {dialog}
@@ -173,15 +163,14 @@ export default function App({ store }: { store: Store }) {
 
 function SyncLine({ s }: { s: SyncState }) {
   if (s.error) return <div className="sync is-bad">{s.error}</div>;
-  if (s.fallback)
-    return <div className="sync is-warn">Can't reach your Claude account. Saving in this browser; it sends next time.</div>;
+  if (s.fallback) return <div className="sync is-warn">Can't reach your Claude account. Saving in this browser; it sends next time.</div>;
   if (s.where === 'device') return null;
   if (s.loading) return <div className="sync">Loading…</div>;
   if (s.pending)
     return (
       <div className="sync is-warn">
-        {s.pending} change{s.pending > 1 ? 's' : ''} waiting for signal · kept on this device, sends by itself
+        {s.pending} change{s.pending > 1 ? 's' : ''} waiting for signal · kept on this phone, sends by itself
       </div>
     );
-  return <div className="sync is-ok">✓ Saved to your Claude account</div>;
+  return <div className="sync">✓ Saved to your Claude account</div>;
 }

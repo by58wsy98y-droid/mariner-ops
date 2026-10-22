@@ -1,11 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cloudStore, diffDocs, fromDocs, toDocs } from './cloudStore';
 import { emptyData, type AppData, type SyncState } from './storage';
-import type { DayEntry } from './types';
+import { emptyDay } from './calc';
+import type { DayLog } from './types';
 
-const entry = (date: string, gallons: number): DayEntry => ({
-  date, tanks: [{ tankId: 'P1', label: '#2', side: 'PORT', sounding: "9'4", gallons }],
-  fuelReceived: 0, lubeReceived: 0, lubeUsed: 0, waterReceived: 0, waterUsed: 0,
+const entry = (date: string, hours: number): DayLog => ({
+  ...emptyDay(date, emptyData().settings),
+  cells: { 'main.totalHours.port': { today: hours } },
 });
 
 // A stand-in for the claude.ai page database with an on/off signal.
@@ -76,7 +77,7 @@ describe('cloud store documents', () => {
     const d: AppData = { ...emptyData(), entries: [entry('2026-10-02', 2), entry('2026-10-01', 1)] };
     const back = fromDocs(toDocs(d));
     expect(back.entries.map((e) => e.date)).toEqual(['2026-10-01', '2026-10-02']);
-    expect(back.settings.capacity).toBe(91500);
+    expect(back.settings.sections.length).toBe(5);
   });
 
   it('diff writes only what changed', () => {
@@ -102,7 +103,7 @@ describe('cloud store sync', () => {
     await vi.advanceTimersByTimeAsync(500);
     expect(s.status.pending).toBe(1);
     expect(fake.docs.size).toBe(0);
-    expect(localStorage.getItem('fuel-log:pending')).toContain('day-2026-10-01');
+    expect(localStorage.getItem('engine-log:pending')).toContain('day-2026-10-01');
 
     fake.state.online = true;
     handlers.online();
@@ -121,6 +122,20 @@ describe('cloud store sync', () => {
     const second = await started(); // reopened later
     expect(fake.docs.has('day-2026-10-01')).toBe(true);
     expect(second.status.pending).toBe(0);
+  });
+
+  it('a change typed just before the page closes still shows when it reopens, even with no signal', async () => {
+    vi.stubGlobal('window', { addEventListener: () => {}, removeEventListener: () => {} }); // no account
+    const first = await started();
+    first.store.persist(first.data, { ...first.data, entries: [entry('2026-10-01', 24)] });
+    // closed at once: the full copy's timer never ran
+    const reopened = cloudStore();
+    expect(reopened.initial.entries.map((e) => e.date)).toEqual([]); // no full copy existed yet...
+    first.store.persist(first.data, { ...first.data, entries: [entry('2026-10-01', 24)] });
+    await vi.advanceTimersByTimeAsync(400); // full copy written once
+    first.store.persist({ ...first.data, entries: [entry('2026-10-01', 24)] }, { ...first.data, entries: [entry('2026-10-01', 24), entry('2026-10-02', 12)] });
+    const again = cloudStore(); // closed right after the second change
+    expect(again.initial.entries.map((e) => e.date)).toEqual(['2026-10-01', '2026-10-02']);
   });
 
   it('restore replaces the whole log, removing days not in the file', async () => {

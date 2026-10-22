@@ -1,11 +1,10 @@
-// Shared storage pieces: the data shape, backup files, drafts, and the Store interface
-// that the phone build (localStore) and the web build (cloudStore) each implement.
-import { DEFAULT_SETTINGS } from './calc';
-import type { DayEntry, Settings } from './types';
+// Shared storage pieces: the data shape, backup files, and the Store interface the web build implements.
+import { DEFAULT_SECTIONS, DEFAULT_SETTINGS } from './calc';
+import type { DayLog, Settings } from './types';
 
 export interface AppData {
   settings: Settings;
-  entries: DayEntry[];
+  entries: DayLog[]; // sorted by date
 }
 
 /** Where the log is being saved right now, for the status line. */
@@ -16,6 +15,8 @@ export interface SyncState {
   fallback: boolean; // wanted the account but couldn't reach it, saving in this browser for now
   error?: string;
 }
+
+export type SaveResult = 'saved' | 'declined' | 'unavailable';
 
 export interface Store {
   /** Data to show right away (the copy kept in this browser). */
@@ -28,22 +29,44 @@ export interface Store {
   persist(prev: AppData, next: AppData): void;
   /** Replace the whole log (restore from a backup file). */
   replaceAll(prev: AppData, next: AppData): void;
-  /** Offer a file to the user. */
-  saveFile(filename: string, text: string): Promise<'saved' | 'declined' | 'unavailable'>;
+  /** Offer a file to the user (backup .json or printable .pdf). */
+  saveFile(filename: string, data: string | ArrayBuffer): Promise<SaveResult>;
 }
 
-export const emptyData = (): AppData => ({ settings: { ...DEFAULT_SETTINGS }, entries: [] });
+export const emptyData = (): AppData => ({ settings: normalizeSettings({}), entries: [] });
+
+export function normalizeSettings(s: Partial<Settings> | undefined | null): Settings {
+  const v = s ?? {};
+  return {
+    ...DEFAULT_SETTINGS,
+    ...v,
+    sections: Array.isArray(v.sections) && v.sections.length ? v.sections : DEFAULT_SECTIONS,
+    start: {
+      counters: { ...(v.start?.counters ?? {}) },
+      fluids: { ...DEFAULT_SETTINGS.start.fluids, ...(v.start?.fluids ?? {}) },
+    },
+  };
+}
 
 export function normalize(d: any): AppData {
-  if (!d || typeof d !== 'object' || !Array.isArray(d.entries)) throw new Error('Not a fuel log backup file');
-  return { settings: { ...DEFAULT_SETTINGS, ...(d.settings ?? {}) }, entries: d.entries };
+  if (!d || typeof d !== 'object' || !Array.isArray(d.entries) || !d.entries.every((e: any) => typeof e?.date === 'string'))
+    throw new Error("This isn't an engine log backup file.");
+  const entries = [...d.entries].sort((a: DayLog, b: DayLog) => a.date.localeCompare(b.date));
+  return { settings: normalizeSettings(d.settings), entries };
 }
 
-export function backupFile(data: AppData): { filename: string; text: string } {
-  const file = { app: 'towboat-fuel-log', version: 1, exportedAt: new Date().toISOString(), ...data };
-  const name = (data.settings.boatName || 'boat').replace(/[^\w-]+/g, '_');
-  return { filename: `fuel-log-${name}-${new Date().toISOString().slice(0, 10)}.json`, text: JSON.stringify(file, null, 2) };
+const fileSafe = (s: string) => s.replace(/[^\w-]+/g, '_').replace(/^_+|_+$/g, '') || 'boat';
+
+export function backupFile(data: AppData, now = new Date()): { filename: string; text: string } {
+  const file = { app: 'engine-log', version: 1, exportedAt: now.toISOString(), ...data };
+  return {
+    filename: `engine-log-backup-${fileSafe(data.settings.boatName)}-${now.toISOString().slice(0, 10)}.json`,
+    text: JSON.stringify(file, null, 2),
+  };
 }
+
+export const pdfName = (data: AppData, dates: string[]) =>
+  `engine-log-${fileSafe(data.settings.boatName)}-${dates[0]}${dates.length > 1 ? `-to-${dates[dates.length - 1]}` : ''}.pdf`;
 
 export async function readBackup(file: File): Promise<AppData> {
   return normalize(JSON.parse(await file.text()));
@@ -66,25 +89,5 @@ export function writeLocal(key: string, value: unknown): boolean {
     return true;
   } catch {
     return false;
-  }
-}
-
-// Unsaved typing on the entry screen is kept per day, so a page reload doesn't lose it.
-const DRAFT = 'fuel-log:draft:';
-
-export interface Draft {
-  tanks: Record<string, { sounding: string; gallons: string }>;
-  nums: Record<string, string>;
-  start: { fuel: string; lube: string; water: string };
-}
-
-export const readDraft = (date: string) => readLocal<Draft>(DRAFT + date);
-export const writeDraft = (date: string, d: Draft | null) => writeLocal(DRAFT + date, d);
-
-export function draftDates(): string[] {
-  try {
-    return Object.keys(localStorage).filter((k) => k.startsWith(DRAFT)).map((k) => k.slice(DRAFT.length)).sort();
-  } catch {
-    return [];
   }
 }

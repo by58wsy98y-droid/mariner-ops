@@ -1,71 +1,87 @@
-export type Side = 'PORT' | 'STBD';
-export type DayTankMode = 'none' | 'one' | 'perSide';
+export type Side = 'port' | 'stbd' | 'one'; // 'one' = single-column sections (Auxiliary Equipment)
+export type FluidId = 'fuel' | 'lube' | 'water';
 
-/** One tank in the boat's layout. `id` is stable so old entries keep matching after labels change. */
-export interface TankDef {
+/** One line on an equipment sheet, e.g. "Fuel Filter Hours". */
+export interface RowDef {
   id: string;
-  side: Side;
   label: string;
-  isDayTank: boolean;
+  /** 'hours' lines are filled by "ran __ hrs"; 'added' lines (lube oil added) are typed by hand. */
+  kind: 'hours' | 'added';
 }
 
+/** One equipment sheet, e.g. Main Engines. */
+export interface SectionDef {
+  id: string;
+  title: string;
+  sided: boolean; // Port + Starboard columns, or a single column
+  rows: RowDef[];
+}
+
+/** Prev values carried into a day: one per counter ("main.fuelFilter.port"), plus fluid balances. */
 export interface Balances {
-  fuel: number;
-  lube: number;
-  water: number;
+  counters: Record<string, number>;
+  fluids: Record<FluidId, number>;
 }
 
 export interface Settings {
   boatName: string;
-  capacity: number; // gallons when full
-  portLabels: string[]; // one per main tank, PORT side
-  stbdLabels: string[]; // one per main tank, STBD side
-  dayTanks: DayTankMode;
-  truckSize: number; // gallons per truck load
-  alertTrucks: number[]; // alert levels, in number of trucks
-  start: Balances | null; // on hand before the first-ever entry; null = not set yet
+  chief: string; // default Chief Engineer for new days
+  sections: SectionDef[];
+  start: Balances; // Prev values for the very first day
   lastBackup: string | null; // ISO timestamp
 }
 
-export interface TankReading {
-  tankId: string;
-  label: string; // label at time of entry
-  side: Side;
-  sounding: string; // as typed, e.g. 9'4
-  gallons: number | null;
+export interface Cell {
+  today: number | null;
+  /** Counter reset this day (filter changed, overhaul...): Prev starts from `to` instead of yesterday's total. */
+  reset?: { to: number; note: string };
 }
 
-export interface DayEntry {
-  date: string; // YYYY-MM-DD, one entry per date
-  tanks: TankReading[];
-  fuelReceived: number;
-  lubeReceived: number;
-  lubeUsed: number;
-  waterReceived: number;
-  waterUsed: number;
+export interface FluidDay {
+  used: number | null;
+  purchased: number | null;
+  transferred: number | null; // transferred off the boat
 }
 
-export interface FuelReport {
-  previous: number;
-  received: number;
+export interface Issue {
+  category: string;
+  comment: string;
+  resolved: '' | 'Yes' | 'No';
+  notified: '' | 'Yes' | 'No'; // Port Engineer Notified
+}
+
+export interface DayLog {
+  date: string; // YYYY-MM-DD, one log per day
+  chief: string;
+  fluids: Record<FluidId, FluidDay>;
+  draftBow: number | null;
+  draftStern: number | null;
+  loads: number | null;
+  empties: number | null;
+  from: string;
+  to: string;
+  cells: Record<string, Cell>; // by counter key
+  comments: string;
+  issues: Issue[];
+}
+
+export interface CellCalc {
+  prev: number;
+  today: number;
   total: number;
-  onHand: number;
+  reset?: Cell['reset'];
+}
+
+export interface FluidCalc {
+  begin: number;
   used: number;
+  purchased: number;
+  transferred: number;
+  end: number;
 }
-// Lube oil and water have the same five rows.
-export type StockReport = FuelReport;
 
-export interface DayResult {
+export interface DayCalc {
   date: string;
-  fuel: FuelReport;
-  lube: StockReport;
-  water: StockReport;
-}
-
-export interface TruckAlert {
-  trucks: number;
-  gallons: number; // trucks * truckSize
-  threshold: number; // capacity - gallons
-  onHand: number;
-  roomToFull: number;
+  cells: Record<string, CellCalc>;
+  fluids: Record<FluidId, FluidCalc>;
 }

@@ -1,0 +1,336 @@
+{
+ "settings": {
+  "boatName": "Whitney Ann Cruse",
+  "chief": "Joel Muamba",
+  "start": {
+   "counters": {
+    "main.totalHours.port": 82683,
+    "main.totalHours.stbd": 83556,
+    "main.majorOH.port": 431,
+    "main.majorOH.stbd": 431,
+    "main.topEndOH.port": 431,
+    "main.topEndOH.stbd": 431,
+    "main.turbo.port": 13525,
+    "main.turbo.stbd": 14883,
+    "main.lubeFilter.port": 431,
+    "main.lubeFilter.stbd": 431,
+    "main.fuelFilter.port": 60,
+    "main.fuelFilter.stbd": 60,
+    "main.racor.port": 60,
+    "main.racor.stbd": 60,
+    "main.airFilter.port": 431,
+    "main.airFilter.stbd": 431,
+    "main.tuneUp.port": 431,
+    "main.tuneUp.stbd": 431,
+    "main.lubeChange.port": 431,
+    "main.lubeChange.stbd": 431,
+    "main.lubeAdded.port": 320,
+    "main.lubeAdded.stbd": 320,
+    "gear.gearOH.port": 114086,
+    "gear.gearOH.stbd": 114384,
+    "gear.strainer.port": 99,
+    "gear.strainer.stbd": 99,
+    "gear.pilotGreased.port": 0,
+    "gear.pilotGreased.stbd": 0,
+    "gear.pilotChanged.port": 0,
+    "gear.pilotChanged.stbd": 0,
+    "gear.lubeChange.port": 3097,
+    "gear.lubeChange.stbd": 3094,
+    "gear.lubeAdded.port": 0,
+    "gear.lubeAdded.stbd": 0,
+    "gen.majorOH.port": 7267,
+    "gen.majorOH.stbd": 36213,
+    "gen.tuneUp.port": 1723,
+    "gen.tuneUp.stbd": 1665,
+    "gen.lubeFilter.port": 0,
+    "gen.lubeFilter.stbd": 31,
+    "gen.fuelFilter.port": 0,
+    "gen.fuelFilter.stbd": 31,
+    "gen.airFilter.port": 0,
+    "gen.airFilter.stbd": 31,
+    "gen.lubeAdded.port": 0,
+    "gen.lubeAdded.stbd": 1,
+    "hot.majorOH.port": 783,
+    "hot.majorOH.stbd": 45076,
+    "hot.endBell.port": 783,
+    "hot.endBell.stbd": 45076,
+    "aux.polisherSvc.one": 125,
+    "aux.polisher.one": 125,
+    "aux.serviceFilter.one": 220,
+    "aux.comp1.one": 0,
+    "aux.comp2.one": 0,
+    "aux.comp3.one": 0
+   },
+   "fluids": {
+    "fuel": 76334,
+    "lube": 1107,
+    "water": 11000
+   }
+  },
+  "lastBackup": null
+ },
+ "day": {
+  "date": "2026-10-20",
+  "chief": "Joel Muamba",
+  "fluids": {
+   "fuel": {
+    "used": 978,
+    "purchased": null,
+    "transferred": null
+   },
+   "lube": {
+    "used": 0,
+    "purchased": null,
+    "transferred": null
+   },
+   "water": {
+    "used": 500,
+    "purchased": null,
+    "transferred": null
+   }
+  },
+  "draftBow": 109,
+  "draftStern": 108,
+  "loads": 2,
+  "empties": 0,
+  "from": "winona",
+  "to": "stl",
+  "cells": {
+   "main.totalHours.port": {
+    "today": 24
+   },
+   "main.totalHours.stbd": {
+    "today": 24
+   },
+   "main.majorOH.port": {
+    "today": 24
+   },
+   "main.majorOH.stbd": {
+    "today": 24
+   },
+   "main.topEndOH.port": {
+    "today": 24
+   },
+   "main.topEndOH.stbd": {
+    "today": 24
+   },
+   "main.turbo.port": {
+    "today": 24
+   },
+   "main.turbo.stbd": {
+    "today": 24
+   },
+   "main.lubeFilter.port": {
+    "today": 24
+   },
+   "main.lubeFilter.stbd": {
+    "today": 24
+   },
+   "main.fuelFilter.port": {
+    "today": 24
+   },
+   "main.fuelFilter.stbd": {
+    "today": 24
+   },
+   "main.racor.port": {
+    "today": 24
+   },
+   "main.racor.stbd": {
+    "today": 24
+   },
+   "main.airFilter.port": {
+    "today": 24
+   },
+   "main.airFilter.stbd": {
+    "today": 24
+   },
+   "main.tuneUp.port": {
+    "today": 24
+   },
+   "main.tuneUp.stbd": {
+    "today": 24
+   },
+   "main.lubeChange.port": {
+    "today": 24
+   },
+   "main.lubeChange.stbd": {
+    "today": 24
+   },
+   "main.lubeAdded.port": {
+    "today": 0
+   },
+   "main.lubeAdded.stbd": {
+    "today": 0
+   },
+   "gear.gearOH.port": {
+    "today": 24
+   },
+   "gear.gearOH.stbd": {
+    "today": 24
+   },
+   "gear.strainer.port": {
+    "today": 24
+   },
+   "gear.strainer.stbd": {
+    "today": 24
+   },
+   "gear.pilotGreased.port": {
+    "today": 0
+   },
+   "gear.pilotGreased.stbd": {
+    "today": 0
+   },
+   "gear.pilotChanged.port": {
+    "today": 0
+   },
+   "gear.pilotChanged.stbd": {
+    "today": 0
+   },
+   "gear.lubeChange.port": {
+    "today": 24
+   },
+   "gear.lubeChange.stbd": {
+    "today": 24
+   },
+   "gear.lubeAdded.port": {
+    "today": 0
+   },
+   "gear.lubeAdded.stbd": {
+    "today": 0
+   },
+   "gen.majorOH.port": {
+    "today": 0
+   },
+   "gen.majorOH.stbd": {
+    "today": 24
+   },
+   "gen.tuneUp.port": {
+    "today": 0
+   },
+   "gen.tuneUp.stbd": {
+    "today": 24
+   },
+   "gen.lubeFilter.port": {
+    "today": 0
+   },
+   "gen.lubeFilter.stbd": {
+    "today": 24
+   },
+   "gen.fuelFilter.port": {
+    "today": 0
+   },
+   "gen.fuelFilter.stbd": {
+    "today": 24
+   },
+   "gen.airFilter.port": {
+    "today": 0
+   },
+   "gen.airFilter.stbd": {
+    "today": 24
+   },
+   "gen.lubeAdded.port": {
+    "today": 0
+   },
+   "gen.lubeAdded.stbd": {
+    "today": 1
+   },
+   "hot.majorOH.port": {
+    "today": 0
+   },
+   "hot.majorOH.stbd": {
+    "today": 24
+   },
+   "hot.endBell.port": {
+    "today": 0
+   },
+   "hot.endBell.stbd": {
+    "today": 24
+   },
+   "aux.polisherSvc.one": {
+    "today": 24
+   },
+   "aux.polisher.one": {
+    "today": 24
+   },
+   "aux.serviceFilter.one": {
+    "today": 0
+   },
+   "aux.comp1.one": {
+    "today": 0
+   },
+   "aux.comp2.one": {
+    "today": 0
+   },
+   "aux.comp3.one": {
+    "today": 0
+   }
+  },
+  "comments": "GAR/SAFE: LOW/GREEN. BEGINING OF WATCH WALKTHROUGH.\nSWITCHED TO STANDBY STEERIN PUMP\nREWIRED PORT SECONDARY WINCH DIRECTIONAL CONTROLLER. (WIRES WERE CUT)\nGRAVITATING FROM #3S INTO #4 FUEL TANK\nDRAINED BILGE IN RUDDER ROOM (PUMP FLOAT SWITCH HAD MALFUNCTIONED BUT WORKING AGAIN)\nREPLACED EXTERIOR LIGHTS ON HEAD DECK",
+  "issues": []
+ },
+ "printed": {
+  "totals": {
+   "main.totalHours.port": 82707,
+   "main.totalHours.stbd": 83580,
+   "main.majorOH.port": 455,
+   "main.majorOH.stbd": 455,
+   "main.topEndOH.port": 455,
+   "main.topEndOH.stbd": 455,
+   "main.turbo.port": 13549,
+   "main.turbo.stbd": 14907,
+   "main.lubeFilter.port": 455,
+   "main.lubeFilter.stbd": 455,
+   "main.fuelFilter.port": 84,
+   "main.fuelFilter.stbd": 84,
+   "main.racor.port": 84,
+   "main.racor.stbd": 84,
+   "main.airFilter.port": 455,
+   "main.airFilter.stbd": 455,
+   "main.tuneUp.port": 455,
+   "main.tuneUp.stbd": 455,
+   "main.lubeChange.port": 455,
+   "main.lubeChange.stbd": 455,
+   "main.lubeAdded.port": 320,
+   "main.lubeAdded.stbd": 320,
+   "gear.gearOH.port": 114110,
+   "gear.gearOH.stbd": 114408,
+   "gear.strainer.port": 123,
+   "gear.strainer.stbd": 123,
+   "gear.pilotGreased.port": 0,
+   "gear.pilotGreased.stbd": 0,
+   "gear.pilotChanged.port": 0,
+   "gear.pilotChanged.stbd": 0,
+   "gear.lubeChange.port": 3121,
+   "gear.lubeChange.stbd": 3118,
+   "gear.lubeAdded.port": 0,
+   "gear.lubeAdded.stbd": 0,
+   "gen.majorOH.port": 7267,
+   "gen.majorOH.stbd": 36237,
+   "gen.tuneUp.port": 1723,
+   "gen.tuneUp.stbd": 1689,
+   "gen.lubeFilter.port": 0,
+   "gen.lubeFilter.stbd": 55,
+   "gen.fuelFilter.port": 0,
+   "gen.fuelFilter.stbd": 55,
+   "gen.airFilter.port": 0,
+   "gen.airFilter.stbd": 55,
+   "gen.lubeAdded.port": 0,
+   "gen.lubeAdded.stbd": 2,
+   "hot.majorOH.port": 783,
+   "hot.majorOH.stbd": 45100,
+   "hot.endBell.port": 783,
+   "hot.endBell.stbd": 45100,
+   "aux.polisherSvc.one": 149,
+   "aux.polisher.one": 149,
+   "aux.serviceFilter.one": 220,
+   "aux.comp1.one": 0,
+   "aux.comp2.one": 0,
+   "aux.comp3.one": 0
+  },
+  "fluidEnd": {
+   "fuel": 75356,
+   "lube": 1107,
+   "water": 10500
+  }
+ }
+}

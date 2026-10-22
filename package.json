@@ -1,14 +1,11 @@
 {
-  "name": "towboat-fuel-log",
+  "name": "engine-log",
   "private": true,
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite --host",
-    "build": "tsc --noEmit && vite build",
-    "preview": "vite preview --host",
-    "test": "vitest run",
-    "build:web": "tsc --noEmit && vite build -c vite.web.config.ts && node scripts/build-web.mjs"
+    "build": "tsc --noEmit && vite build && node scripts/build-web.mjs",
+    "test": "vitest run"
   },
   "dependencies": {
     "react": "18.3.1",
@@ -18,6 +15,8 @@
     "@types/react": "18.3.12",
     "@types/react-dom": "18.3.1",
     "@vitejs/plugin-react": "4.3.3",
+    "jspdf": "^2.5.1",
+    "jspdf-autotable": "^3.8.2",
     "typescript": "5.6.3",
     "vite": "5.4.10",
     "vitest": "2.1.4"

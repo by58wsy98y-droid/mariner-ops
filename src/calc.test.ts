@@ -1,95 +1,155 @@
 import { describe, expect, it } from 'vitest';
-import { computeChain, parseSounding, previousBalances, tankLayout, tankTotal, truckAlert, DEFAULT_SETTINGS } from './calc';
-import type { DayEntry, TankReading } from './types';
+import seed from '../seed/log-2026-10-20.json';
+import {
+  DEFAULT_SECTIONS, balancesBefore, cellKey, computeChain, copyFrom, emptyDay, fillHours, fmt2, parseNum,
+  sectionKeys, setReset, setToday, shiftDate, usedFromEnding,
+} from './calc';
+import { normalizeSettings } from './storage';
+import type { DayLog, Settings } from './types';
 
-const tanks = (...g: number[]): TankReading[] =>
-  g.map((gallons, i) => ({ tankId: `T${i}`, label: `#${i}`, side: 'PORT', sounding: '', gallons }));
+const settings: Settings = normalizeSettings(seed.settings as Partial<Settings>);
+const oct20 = seed.day as unknown as DayLog;
+const day = (date: string, patch: Partial<DayLog> = {}): DayLog => ({ ...emptyDay(date, settings), ...patch });
+const K = (s: string, r: string, side: 'port' | 'stbd' | 'one') => cellKey(s, r, side);
 
-const day = (date: string, gallons: number[], o: Partial<DayEntry> = {}): DayEntry => ({
-  date, tanks: tanks(...gallons), fuelReceived: 0, lubeReceived: 0, lubeUsed: 0, waterReceived: 0, waterUsed: 0, ...o,
-});
+describe('the printed 10/20 log', () => {
+  const [calc] = computeChain([oct20], settings);
 
-describe('parseSounding', () => {
-  it.each([
-    ["9'4", 112], ["9' 4\"", 112], ['9\'4"', 112], ["9'", 108], ['118', 118], ["0'11", 11], ['9’4', 112],
-  ])('%s -> %d in', (s, n) => expect(parseSounding(s)).toBe(n));
-  it('blank / junk -> null', () => {
-    expect(parseSounding('')).toBeNull();
-    expect(parseSounding('abc')).toBeNull();
+  it('every line has a port and starboard (or single) counter: 56 in all', () => {
+    expect(sectionKeys(DEFAULT_SECTIONS)).toHaveLength(56);
+    expect(Object.keys(seed.printed.totals)).toHaveLength(56);
+  });
+
+  it('Prev + Today reproduces every printed Total', () => {
+    for (const [key, total] of Object.entries(seed.printed.totals)) expect([key, calc.cells[key].total]).toEqual([key, total]);
+  });
+
+  it('fuel, lube and water end where the printout ends', () => {
+    expect(calc.fluids.fuel).toMatchObject({ begin: 76334, used: 978, end: 75356 });
+    expect(calc.fluids.lube.end).toBe(1107);
+    expect(calc.fluids.water.end).toBe(10500);
+  });
+
+  it("the next day's Prev is 10/20's Total", () => {
+    const bal = balancesBefore([oct20], settings, '2026-10-21');
+    expect(bal.counters[K('main', 'totalHours', 'port')]).toBe(82707);
+    expect(bal.counters[K('gen', 'lubeAdded', 'stbd')]).toBe(2);
+    expect(bal.counters[K('aux', 'serviceFilter', 'one')]).toBe(220);
+    expect(bal.fluids).toEqual({ fuel: 75356, lube: 1107, water: 10500 });
   });
 });
 
-describe('tank layout', () => {
-  it('default is #2-#5 each side plus one DT', () => {
-    const t = tankLayout(DEFAULT_SETTINGS);
-    expect(t).toHaveLength(9);
-    expect(t.filter((x) => x.side === 'PORT' && !x.isDayTank).map((x) => x.label)).toEqual(['#2', '#3', '#4', '#5']);
-    expect(t.filter((x) => x.isDayTank)).toHaveLength(1);
-  });
-  it('day tanks: none / per side', () => {
-    expect(tankLayout({ ...DEFAULT_SETTINGS, dayTanks: 'none' })).toHaveLength(8);
-    expect(tankLayout({ ...DEFAULT_SETTINGS, dayTanks: 'perSide' }).filter((x) => x.isDayTank)).toHaveLength(2);
-  });
-});
+describe('the day-to-day chain', () => {
+  const d21 = setToday(day('2026-10-21'), K('main', 'totalHours', 'port'), 24);
 
-describe('fuel / lube / water chain (matches spreadsheet formulas)', () => {
-  const start = { fuel: 80000, lube: 500, water: 2000 };
-
-  it('TOTAL is the sum of all gallons cells, blanks count 0', () => {
-    expect(tankTotal([...tanks(100, 200), { tankId: 'x', label: 'x', side: 'STBD', sounding: '', gallons: null }])).toBe(300);
+  it('Total = Prev + Today, and a blank Today carries Prev forward', () => {
+    const c = computeChain([oct20, d21], settings)[1];
+    expect(c.cells[K('main', 'totalHours', 'port')]).toMatchObject({ prev: 82707, today: 24, total: 82731 });
+    expect(c.cells[K('main', 'totalHours', 'stbd')]).toMatchObject({ prev: 83580, today: 0, total: 83580 });
   });
 
-  it('day 1 uses starting balances; fuel used = prev + received - on hand', () => {
-    const [d1] = computeChain([day('2026-10-01', [40000, 38000])], start);
-    expect(d1.fuel).toEqual({ previous: 80000, received: 0, total: 80000, onHand: 78000, used: 2000 });
-  });
-
-  it('lube and water: on hand = prev + received - used', () => {
-    const [d1] = computeChain([day('2026-10-01', [0], { lubeReceived: 55, lubeUsed: 5, waterReceived: 1000, waterUsed: 300 })], start);
-    expect(d1.lube).toEqual({ previous: 500, received: 55, total: 555, onHand: 550, used: 5 });
-    expect(d1.water).toEqual({ previous: 2000, received: 1000, total: 3000, onHand: 2700, used: 300 });
-  });
-
-  it('each day links to the previous day, in date order, across months', () => {
-    const entries = [
-      day('2026-11-01', [76000], { fuelReceived: 7500 }),
-      day('2026-10-31', [78000], { lubeUsed: 10, waterUsed: 100 }),
-    ];
-    const [a, b] = computeChain(entries, start);
-    expect(a.date).toBe('2026-10-31');
-    expect(b.fuel).toEqual({ previous: 78000, received: 7500, total: 85500, onHand: 76000, used: 9500 });
-    expect(b.lube.previous).toBe(490);
-    expect(b.water.previous).toBe(1900);
+  it('a skipped day just links to the last saved day', () => {
+    const c = computeChain([oct20, day('2026-10-23')], settings)[1];
+    expect(c.cells[K('main', 'turbo', 'stbd')].prev).toBe(14907);
   });
 
   it('editing an earlier day changes every later day', () => {
-    const e = [day('2026-10-01', [78000]), day('2026-10-02', [76000]), day('2026-10-03', [74000])];
-    expect(computeChain(e, start)[2].fuel.previous).toBe(76000);
-    e[0] = day('2026-10-01', [79000], { lubeUsed: 20 });
-    const c = computeChain(e, start);
-    expect(c[1].fuel.used).toBe(3000);
-    expect(c[2].lube.previous).toBe(480);
+    const later = setToday(day('2026-10-22'), K('main', 'fuelFilter', 'port'), 24);
+    const before = computeChain([oct20, d21, later], settings)[2].cells[K('main', 'fuelFilter', 'port')].total;
+    const edited21 = setToday(d21, K('main', 'fuelFilter', 'port'), 10);
+    const after = computeChain([oct20, edited21, later], settings)[2].cells[K('main', 'fuelFilter', 'port')].total;
+    expect(after - before).toBe(10);
   });
 
-  it('forgotten fuel received shows as negative used', () => {
-    const [d] = computeChain([day('2026-10-01', [87000])], start);
-    expect(d.fuel.used).toBe(-7000);
+  it('a reset starts the count again and the next day carries on from it', () => {
+    let d = setReset(day('2026-10-21'), K('main', 'fuelFilter', 'port'), { to: 0, note: 'Changed fuel filters' });
+    d = setToday(d, K('main', 'fuelFilter', 'port'), 6);
+    const d22 = setToday(day('2026-10-22'), K('main', 'fuelFilter', 'port'), 24);
+    const [, c21, c22] = computeChain([oct20, d, d22], settings);
+    expect(c21.cells[K('main', 'fuelFilter', 'port')]).toMatchObject({ prev: 0, today: 6, total: 6, reset: { note: 'Changed fuel filters' } });
+    expect(c22.cells[K('main', 'fuelFilter', 'port')]).toMatchObject({ prev: 6, total: 30 });
+    expect(c21.cells[K('main', 'fuelFilter', 'stbd')].total).toBe(84); // other side untouched
   });
 
-  it('previousBalances picks the last entry before the date', () => {
-    const e = [day('2026-10-01', [78000]), day('2026-10-05', [70000])];
-    expect(previousBalances(e, start, '2026-10-03').fuel).toBe(78000);
-    expect(previousBalances(e, start, '2026-10-01').fuel).toBe(80000);
-    expect(previousBalances(e, start, '2026-10-09').fuel).toBe(70000);
+  it('removing a reset puts Prev back to yesterday', () => {
+    const d = setReset(setReset(day('2026-10-21'), K('gen', 'airFilter', 'stbd'), { to: 0, note: 'x' }), K('gen', 'airFilter', 'stbd'), undefined);
+    expect(computeChain([oct20, d], settings)[1].cells[K('gen', 'airFilter', 'stbd')].prev).toBe(55);
+  });
+
+  it('fluids: Ending = Beginning - Used + Purchased - Transferred off, chained', () => {
+    const d = day('2026-10-21', {
+      fluids: {
+        fuel: { used: 1000, purchased: 15000, transferred: 500 },
+        lube: { used: 5, purchased: null, transferred: null },
+        water: { used: 400, purchased: 2000, transferred: null },
+      },
+    });
+    const c = computeChain([oct20, d], settings)[1].fluids;
+    expect(c.fuel).toEqual({ begin: 75356, used: 1000, purchased: 15000, transferred: 500, end: 88856 });
+    expect(c.lube.end).toBe(1102);
+    expect(c.water.end).toBe(12100);
+  });
+
+  it('typing the sounded Ending works out Used', () => {
+    expect(usedFromEnding(75356, 0, 0, 74400)).toBe(956);
+    expect(usedFromEnding(75356, 7500, 0, 81900)).toBe(956);
+  });
+
+  it('decimals add up cleanly (0.1 + 0.2 = 0.30)', () => {
+    let d = setToday(day('2026-10-21'), K('gen', 'lubeAdded', 'stbd'), 0.1);
+    let c = computeChain([oct20, d], settings)[1];
+    d = setToday(day('2026-10-22'), K('gen', 'lubeAdded', 'stbd'), 0.2);
+    c = computeChain([oct20, setToday(day('2026-10-21'), K('gen', 'lubeAdded', 'stbd'), 0.1), d], settings)[2];
+    expect(c.cells[K('gen', 'lubeAdded', 'stbd')].total).toBe(2.3);
+    expect(fmt2(0.1 + 0.2)).toBe('0.30');
   });
 });
 
-describe('truck alerts (capacity 91,500, 7,500/truck, levels 1 & 2)', () => {
-  const a = (onHand: number) => truckAlert(onHand, 91500, 7500, [1, 2]);
-  it('no alert above 84,000', () => expect(a(84001)).toBeNull());
-  it('1 truck at exactly 84,000', () => expect(a(84000)).toMatchObject({ trucks: 1, gallons: 7500, threshold: 84000, roomToFull: 7500 }));
-  it('1 truck between thresholds', () => expect(a(80000)?.trucks).toBe(1));
-  it('2 trucks at exactly 76,500', () => expect(a(76500)).toMatchObject({ trucks: 2, gallons: 15000, threshold: 76500 }));
-  it('highest level wins well below', () => expect(a(50000)).toMatchObject({ trucks: 2, roomToFull: 41500 }));
-  it('custom levels and truck size', () => expect(truckAlert(60000, 91500, 8000, [1, 2, 3])).toMatchObject({ trucks: 3, gallons: 24000 }));
+describe('quick fills', () => {
+  it('"ran 24 hrs" fills hours lines on that side only, not lube oil added', () => {
+    const gen = DEFAULT_SECTIONS.find((s) => s.id === 'gen')!;
+    const d = fillHours(day('2026-10-21'), gen, 'port', 24);
+    expect(d.cells[K('gen', 'majorOH', 'port')].today).toBe(24);
+    expect(d.cells[K('gen', 'airFilter', 'port')].today).toBe(24);
+    expect(d.cells[K('gen', 'lubeAdded', 'port')]).toBeUndefined();
+    expect(d.cells[K('gen', 'majorOH', 'stbd')]).toBeUndefined();
+  });
+
+  it('starting from yesterday copies hours run, chief, draft & tow and open issues, not oil added or resets', () => {
+    const y: DayLog = {
+      ...oct20,
+      cells: { ...oct20.cells, [K('main', 'racor', 'port')]: { today: 24, reset: { to: 0, note: 'Changed racors' } } },
+      issues: [
+        { category: 'Steering', comment: 'Standby pump', resolved: 'No', notified: 'Yes' },
+        { category: 'Lights', comment: 'Head deck', resolved: 'Yes', notified: '' },
+      ],
+    };
+    const d = copyFrom(y, '2026-10-21', settings);
+    expect(d.date).toBe('2026-10-21');
+    expect(d.cells[K('main', 'totalHours', 'port')]).toEqual({ today: 24 });
+    expect(d.cells[K('gen', 'majorOH', 'port')]).toEqual({ today: 0 });
+    expect(d.cells[K('gen', 'lubeAdded', 'stbd')]).toBeUndefined();
+    expect(d.cells[K('main', 'racor', 'port')]).toEqual({ today: 24 });
+    expect(d).toMatchObject({ chief: 'Joel Muamba', draftBow: 109, loads: 2, from: 'winona', to: 'stl', comments: '' });
+    expect(d.issues.map((i) => i.category)).toEqual(['Steering']);
+    expect(d.fluids.fuel.used).toBeNull();
+  });
+});
+
+describe('number entry and dates', () => {
+  it('reads typed numbers', () => {
+    expect(parseNum('24')).toBe(24);
+    expect(parseNum('1,107')).toBe(1107);
+    expect(parseNum('2.5')).toBe(2.5);
+    expect(parseNum('.5')).toBe(0.5);
+    expect(parseNum('-30')).toBe(-30);
+    expect(parseNum('')).toBeNull();
+    expect(parseNum('-')).toBeUndefined();
+    expect(parseNum('abc')).toBeUndefined();
+  });
+  it('prints like the company log', () => expect(fmt2(82707)).toBe('82,707.00'));
+  it('steps across month ends', () => {
+    expect(shiftDate('2026-10-31', 1)).toBe('2026-11-01');
+    expect(shiftDate('2026-11-01', -1)).toBe('2026-10-31');
+  });
 });

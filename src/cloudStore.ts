@@ -1,12 +1,11 @@
-// Web build (claude.ai): the log is kept in the user's own private space in the page's database,
-// so it shows on phone and laptop and survives a lost phone. Every change is also kept in this
-// browser until the database confirms it, so a dropped signal loses nothing; it sends on its own.
-import { DEFAULT_SETTINGS } from './calc';
-import { emptyData, normalize, readLocal, writeLocal, type AppData, type Store, type SyncState } from './storage';
-import type { DayEntry, Settings } from './types';
+// The log is kept in the user's own private space in the page's database (claude.ai), so it shows on
+// phone and laptop and survives a lost phone. Every change is also kept in this browser until the
+// database confirms it, so a dropped signal loses nothing; it sends on its own when signal returns.
+import { emptyData, normalize, normalizeSettings, readLocal, writeLocal, type AppData, type Store, type SyncState } from './storage';
+import type { DayLog, Settings } from './types';
 
-const CACHE_KEY = 'fuel-log:cache';
-const PENDING_KEY = 'fuel-log:pending';
+const CACHE_KEY = 'engine-log:cache';
+const PENDING_KEY = 'engine-log:pending';
 const RETRY_MS = 20000;
 const WRITE_TIMEOUT_MS = 30000;
 const SETTINGS_ID = 'settings';
@@ -28,9 +27,9 @@ export function fromDocs(docs: Docs): AppData {
   const settings = docs.get(SETTINGS_ID) as Partial<Settings> | undefined;
   const entries = [...docs]
     .filter(([id]) => id.startsWith(DAY_PREFIX))
-    .map(([, body]) => body as unknown as DayEntry)
+    .map(([, body]) => body as unknown as DayLog)
     .sort((a, b) => a.date.localeCompare(b.date));
-  return { settings: { ...DEFAULT_SETTINGS, ...(settings ?? {}) }, entries };
+  return { settings: normalizeSettings(settings), entries };
 }
 
 /** The document writes that turn `prev` into `next`; `alsoDelete` lists other ids to remove if absent from `next`. */
@@ -49,23 +48,45 @@ const use = async (name: string): Promise<any> => {
   }
 };
 
+function saveInBrowser(filename: string, data: string | ArrayBuffer): 'saved' | 'unavailable' {
+  try {
+    const type = filename.endsWith('.pdf') ? 'application/pdf' : 'application/json';
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([data], { type }));
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    return 'saved';
+  } catch {
+    return 'unavailable';
+  }
+}
+
 const withTimeout = <T,>(p: Promise<T>) =>
   Promise.race([p, new Promise<never>((_, reject) => setTimeout(() => reject({ code: 'timeout' }), WRITE_TIMEOUT_MS))]);
 
 export function cloudStore(): Store {
+  // Unsent changes are saved at once; the full copy a moment later. Opening always lays the first over the second.
+  let pending: Pending = readLocal<Pending>(PENDING_KEY) ?? {};
+  const withPending = (docs: Docs) => {
+    const out = new Map(docs);
+    for (const [id, body] of Object.entries(pending)) body ? out.set(id, body) : out.delete(id);
+    return out;
+  };
   let initial = emptyData();
   let ready = false;
   try {
     const cached = readLocal<AppData>(CACHE_KEY);
     if (cached) {
-      initial = normalize(cached);
+      initial = fromDocs(withPending(toDocs(normalize(cached))));
       ready = true;
     }
   } catch {
     /* damaged copy: wait for the database */
   }
 
-  let pending: Pending = readLocal<Pending>(PENDING_KEY) ?? {};
   let server: Docs | null = null;
   let col: any = null;
   let where: SyncState['where'] = 'account';
@@ -75,6 +96,18 @@ export function cloudStore(): Store {
   let timer: ReturnType<typeof setTimeout> | undefined;
   let onData: (d: AppData) => void = () => {};
   let onStatus: (s: SyncState) => void = () => {};
+  let cacheTimer: ReturnType<typeof setTimeout> | undefined;
+  let unwritten: AppData | null = null;
+  const writeCache = () => {
+    clearTimeout(cacheTimer);
+    if (unwritten) writeLocal(CACHE_KEY, unwritten);
+    unwritten = null;
+  };
+  const cache = (d: AppData) => {
+    unwritten = d;
+    clearTimeout(cacheTimer);
+    cacheTimer = setTimeout(writeCache, 300);
+  };
 
   const report = () =>
     onStatus({ where, loading, pending: Object.keys(pending).length, fallback: where === 'device', error });
@@ -83,10 +116,8 @@ export function cloudStore(): Store {
   // What the page shows: the database's copy with our unconfirmed changes on top.
   const emit = () => {
     if (!server) return;
-    const docs = new Map(server);
-    for (const [id, body] of Object.entries(pending)) body ? docs.set(id, body) : docs.delete(id);
-    const d = fromDocs(docs);
-    writeLocal(CACHE_KEY, d);
+    const d = fromDocs(withPending(server));
+    cache(d);
     onData(d);
   };
 
@@ -135,7 +166,7 @@ export function cloudStore(): Store {
   const queue = (changes: Pending, next: AppData) => {
     Object.assign(pending, changes);
     savePending();
-    writeLocal(CACHE_KEY, next);
+    cache(next);
     report();
     schedule(300); // one write per pause in typing
   };
@@ -149,7 +180,8 @@ export function cloudStore(): Store {
       report();
       let stopped = false;
       let unsub: () => void = () => {};
-      const kick = () => document.visibilityState !== 'hidden' && flush();
+      // Switching away: save the full copy now (the phone may close the page). Coming back: send what's waiting.
+      const kick = () => (document.visibilityState === 'hidden' ? writeCache() : flush());
 
       (async () => {
         const [db, user] = await Promise.all([use('db'), use('user')]);
@@ -187,23 +219,28 @@ export function cloudStore(): Store {
       })();
 
       window.addEventListener('online', kick);
+      window.addEventListener('pagehide', writeCache);
       document.addEventListener('visibilitychange', kick);
       return () => {
         stopped = true;
         unsub();
         clearTimeout(timer);
+        writeCache();
         window.removeEventListener('online', kick);
+        window.removeEventListener('pagehide', writeCache);
         document.removeEventListener('visibilitychange', kick);
       };
     },
     persist: (prev, next) => queue(diffDocs(toDocs(prev), toDocs(next)), next),
     // Restore writes everything in the file and removes every other day.
     replaceAll: (prev, next) => queue(diffDocs(new Map(), toDocs(next), [...toDocs(prev).keys(), ...(server?.keys() ?? [])]), next),
-    async saveFile(filename, text) {
+    async saveFile(filename, data) {
+      // Opened as a plain page (not inside claude.ai): an ordinary browser download.
+      if (!(window as any).claude) return saveInBrowser(filename, data);
       const downloads = await use('downloads');
       if (!downloads) return 'unavailable';
       try {
-        await downloads.save({ filename, data: text });
+        await downloads.save({ filename, data });
         return 'saved';
       } catch (e: any) {
         return e?.code === 'declined' ? 'declined' : 'unavailable';

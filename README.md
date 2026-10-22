@@ -1,56 +1,36 @@
-# Towboat Daily Fuel Log
+# Daily Engine Maintenance log
 
-Phone-first daily fuel / lube oil / water log for a towboat. Replaces the
-`master_empty_copy_copy.xlsx` workbook.
+A stand-in for the company's Daily Engine Maintenance website while it's down. Same sheets as the
+printed log (fuel/lube/water, draft & tow, Main Engines, Gear Boxes, Generator Engines, Hot Ends,
+Auxiliary Equipment, comments and issues). You type **Today**; **Prev** and **Total** fill themselves in.
 
-## Web app (the easy way)
-Open **https://claude.ai/artifact/XPaBN3wnqsaH7BVtnScT3p** on your phone or laptop, signed in to Claude.
-Nothing to install. The link is private to you.
+## Using it
+Open the web app link (it's in the chat where it was made) on your phone or laptop, signed in to Claude.
+Put it on your home screen: iPhone Safari → Share → **Add to Home Screen**; Android Chrome → ⋮ → **Add to Home screen**.
 
-- Your log is saved to your Claude account, in a space only you can read, so the same log shows on
-  your phone and your laptop and survives a lost phone.
-- The page needs signal to open. If the signal drops while it's open, your saves are kept on the phone
-  and go out by themselves when signal returns (the line under the boat name says so).
-- Unsaved typing on the Entry screen is kept too, so leaving the page mid-entry doesn't lose it.
-- **Fuel / Settings → Back up** saves a spare copy as a file; **Restore from file…** loads one.
+- **Day**: pick the date (‹ › step a day). On a new day, **Start from [last day]** copies the hours run,
+  chief, draft & tow and open issues; change what's different. **Ran __ hrs → Fill hours** puts the same
+  hours on every hours line of a sheet (lube-oil-added lines are left for you). Everything saves as you type.
+- **Reset** on any line: when a filter is changed, an overhaul is done or an oil sample is taken. The count
+  starts again from the number you give (usually 0), and your note prints under Reset Comments.
+- **Fuel/Lube/Water**: type Used, or type the Ending balance from soundings and Used works itself out.
+  Transferred means transferred off the boat.
+- **History**: every saved day; tap one to open it. **Print several days** makes one PDF of a date range.
+- **Setup & Backup**: boat name, default chief engineer, rename/add/remove lines and sheets, and
+  **Back up** (saves a .json file) / **Restore from file**.
 
-Updating the web app after a code change: `npm run build:web`, then publish `dist-web/fuel-log.html`
-to the same link (Claude does this for you).
+Printing: the page can't open a print dialog itself, so **Save printable PDF** saves the log as a PDF
+laid out like the company sheets; open it and print from there.
 
-## Phone app version (works with no signal at all)
-The same app can also be put on free static hosting as an installable app that keeps everything on
-the phone and opens with no signal. Steps below.
+## Where the data lives
+Your Claude account, in a space only you can read: the same log on phone and laptop, and a lost phone
+doesn't lose it. The page needs signal to open; if signal drops while it's open, changes are kept on the
+device and sent when signal returns (the line under the boat name says which). Back up now and then anyway.
 
-## Run it on a computer
-1. Install Node.js (LTS) from nodejs.org.
-2. In this folder: `npm install` (first time only), then `npm run dev`.
-3. Open the address it prints (e.g. http://localhost:5173). Phones on the same Wi-Fi can use the "Network" address.
-
-- `npm test` runs the tests (`src/calc.test.ts`, `src/cloudStore.test.ts`).
-- `npm run build` makes the phone app in `dist/` (that folder is what gets hosted).
-- `npm run build:web` makes the web app page, `dist-web/fuel-log.html`.
-
-## Put it on your phone (free hosting)
-**Netlify Drop (easiest):** run `npm run build`, go to https://app.netlify.com/drop and drag the
-`dist` folder onto the page. It gives you an https link. Open that link on your phone.
-
-**GitHub Pages:** in the repo on GitHub go to Settings → Pages → Source: "GitHub Actions".
-Every push to `main` then publishes the app (`.github/workflows/pages.yml`).
-(Pages on a private repo needs a paid GitHub plan; Netlify Drop doesn't.)
-
-## Add to home screen
-- iPhone (Safari): Share button → "Add to Home Screen".
-- Android (Chrome): ⋮ menu → "Install app" / "Add to Home screen".
-Open it once with signal; after that it works with no signal.
-
-## Code layout
-- `src/calc.ts` – all the math (tank totals, fuel/lube/water chain, truck alerts, sounding parsing). Tested in `src/calc.test.ts`.
-- `src/storage.ts` – data shape, backup files, unsaved drafts, and the `Store` interface.
-- `src/localStore.ts` – phone app: saves in the browser on the device.
-- `src/cloudStore.ts` – web app: saves to your Claude account, holds changes on the device until they're sent.
-- `src/Today.tsx`, `src/Log.tsx`, `src/SettingsPage.tsx` – the three screens. `src/Confirm.tsx` – yes/no dialog.
-- `src/main.tsx` / `src/web-main.tsx` – start the phone app / the web app.
-- `public/sw.js` – offline support for the phone app.
-
-Readings are stored per tank with the sounding as typed (inches are computed by
-`parseSounding`), so tank tables / sounding→gallons can be added later in `calc.ts`.
+## For whoever maintains it
+- `npm test` runs the tests (`src/calc.test.ts` checks the math against the printed 10/20/2026 log in
+  `seed/`; `src/cloudStore.test.ts` covers saving with no signal; `src/pdf.test.ts` the printout).
+- `npm run build` makes the page, `dist-web/engine-log.html`, which is published as a claude.ai artifact
+  (with the `db`, `user` and `downloads` capabilities). React and jsPDF load from cdnjs.
+- Code: `src/calc.ts` all arithmetic · `src/cloudStore.ts` saving/sync · `src/pdf.ts` printout ·
+  `src/DayScreen.tsx`, `src/History.tsx`, `src/Setup.tsx` screens · `src/App.tsx` shell.
