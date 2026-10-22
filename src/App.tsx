@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { flushSync } from 'react-dom';
 import { balancesBefore, computeChain, emptyDay, startDateOf, todayISO } from './calc';
 import { backupFile, pdfName, type AppData, type Store, type SyncState } from './storage';
 import { buildPdf, pdfLibFromWindow } from './pdf';
@@ -7,6 +8,7 @@ import { useAsk } from './Confirm';
 import DayScreen from './DayScreen';
 import History from './History';
 import Setup from './Setup';
+import PrintView from './PrintView';
 
 type Screen = 'day' | 'history' | 'setup';
 const BACKUP_REMIND_DAYS = 7;
@@ -22,6 +24,7 @@ export default function App({ store }: { store: Store }) {
   const shownToday = useRef(todayISO()); // the calendar day when "today" was last put on screen
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState('');
+  const [printDates, setPrintDates] = useState<string[] | null>(null);
   const [ask, dialog] = useAsk();
 
   useEffect(
@@ -134,12 +137,23 @@ export default function App({ store }: { store: Store }) {
     }
   };
 
+  // Own-site version: lay the days out for printing, then open the browser's Print (still inside the tap).
+  const print = store.canPrint
+    ? (dates: string[]) => {
+        const saved = dates.filter((x) => dataRef.current.entries.some((e) => e.date === x));
+        if (!saved.length) return;
+        flushSync(() => setPrintDates(saved));
+        window.print();
+      }
+    : undefined;
+
   const go = (sc: Screen) => {
     setScreen(sc);
     window.scrollTo(0, 0);
   };
 
   return (
+    <>
     <div className="app">
       <header>
         <div className="wrap">
@@ -190,7 +204,7 @@ export default function App({ store }: { store: Store }) {
         ) : (
           <>
             {screen === 'day' && (
-              <DayScreen data={data} date={date} setDate={setDate} editDay={editDay} editStart={editStart} onDelete={deleteDay} onPdf={savePdf} ask={ask} />
+              <DayScreen data={data} date={date} setDate={setDate} editDay={editDay} editStart={editStart} onDelete={deleteDay} onPdf={savePdf} onPrint={print} ask={ask} />
             )}
             {screen === 'history' && (
               <History
@@ -201,6 +215,7 @@ export default function App({ store }: { store: Store }) {
                   go('day');
                 }}
                 onPdf={savePdf}
+                onPrint={print}
               />
             )}
             {screen === 'setup' && (
@@ -219,6 +234,8 @@ export default function App({ store }: { store: Store }) {
       </nav>
       {dialog}
     </div>
+    {printDates && <PrintView data={data} dates={printDates} />}
+    </>
   );
 }
 
@@ -228,6 +245,7 @@ function SyncLine({ s }: { s: SyncState }) {
     return <div className="sync is-bad">This browser can't keep a copy. Keep this page open until it says Saved, and back up.</div>;
   if (s.fallback)
     return <div className="sync is-warn">Can't reach your Claude account. Saving on this device; it sends next time you open with signal.</div>;
+  if (s.where === 'device') return <div className="sync">✓ Saved on this device</div>;
   if (s.loading) return <div className="sync">Loading your log from your Claude account…</div>;
   if (s.pending && (s.stalled || (typeof navigator !== 'undefined' && navigator.onLine === false)))
     return (

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import seed from '../seed/log-2026-10-20.json';
+import seed from '../seed/sample-log.json';
 import {
   DEFAULT_SECTIONS, balancesBefore, cellKey, computeChain, copyFrom, emptyDay, fillHours, fmt2, parseNum,
   sectionKeys, sectionsForDay, setReset, setToday, shiftDate, usedFromEnding,
@@ -130,7 +130,7 @@ describe('quick fills', () => {
     expect(d.cells[K('gen', 'majorOH', 'port')]).toEqual({ today: 0 });
     expect(d.cells[K('gen', 'lubeAdded', 'stbd')]).toBeUndefined();
     expect(d.cells[K('main', 'racor', 'port')]).toEqual({ today: 24 });
-    expect(d).toMatchObject({ chief: 'Joel Muamba', draftBow: 109, loads: 2, from: 'winona', to: 'stl', comments: '' });
+    expect(d).toMatchObject({ chief: 'Sample Chief', draftBow: 109, loads: 2, from: 'port a', to: 'port b', comments: '' });
     expect(d.issues.map((i) => i.category)).toEqual(['Steering']);
     expect(d.fluids.fuel.used).toBeNull();
   });
@@ -198,7 +198,7 @@ describe('review fixes', () => {
     expect(d.cells[K('main', 'totalHours', 'port')].today).toBe(12);
     expect(d.cells[K('main', 'totalHours', 'stbd')].today).toBe(24);
     expect(d.from).toBe('cairo');
-    expect(d.to).toBe('stl');
+    expect(d.to).toBe('port b');
   });
 
   it('"Fill hours" and "Start from" leave the lines the log keeps at 0 alone', () => {

@@ -7,10 +7,11 @@
 // is sent, so the other device's entries for that day are kept.
 import { emptyDay } from './calc';
 import {
-  emptyData, normalize, normalizeDay, normalizeSettings, readLocal, writeLocal,
+  DAY_PREFIX, emptyData, fromDocs, normalize, readLocal, saveInBrowser, toDocs, writeLocal,
   type AppData, type Store, type SyncState,
 } from './storage';
-import type { Settings } from './types';
+
+export { fromDocs, toDocs };
 
 const CACHE_KEY = 'engine-log:cache';
 const PENDING_KEY = 'engine-log:pending';
@@ -18,30 +19,12 @@ const OWNER_KEY = 'engine-log:owner'; // which Claude account the copy and queue
 const parkedKey = (uid: string) => `engine-log:pending:${uid}`;
 const RETRY_MS = 20000;
 const WRITE_TIMEOUT_MS = 30000;
-const SETTINGS_ID = 'settings';
-const DAY_PREFIX = 'day-';
 
 type Body = Record<string, unknown>;
 type Docs = Map<string, Body>;
 /** A change not confirmed yet: the copy it was based on, the new copy (null = delete), and whether to replace outright (restore). */
 interface Change { base: Body | null; body: Body | null; force?: boolean }
 type Pending = Record<string, Change>;
-
-// One document for settings, one per day ("day-2026-10-17").
-export function toDocs(d: AppData): Docs {
-  const docs: Docs = new Map([[SETTINGS_ID, { ...d.settings } as unknown as Body]]);
-  for (const e of d.entries) docs.set(DAY_PREFIX + e.date, e as unknown as Body);
-  return docs;
-}
-
-export function fromDocs(docs: Docs): AppData {
-  const entries = [...docs]
-    .filter(([id]) => id.startsWith(DAY_PREFIX))
-    .map(([, body]) => normalizeDay(body))
-    .filter((e) => e.date)
-    .sort((a, b) => a.date.localeCompare(b.date));
-  return { settings: normalizeSettings(docs.get(SETTINGS_ID) as Partial<Settings> | undefined), entries };
-}
 
 const isObj = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v);
 const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
@@ -80,22 +63,6 @@ const use = async (name: string): Promise<any> => {
     return null;
   }
 };
-
-function saveInBrowser(filename: string, data: string | ArrayBuffer): 'saved' | 'unavailable' {
-  try {
-    const type = filename.endsWith('.pdf') ? 'application/pdf' : 'application/json';
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([data], { type }));
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-    return 'saved';
-  } catch {
-    return 'unavailable';
-  }
-}
 
 const withTimeout = <T,>(p: Promise<T>) =>
   Promise.race([p, new Promise<never>((_, reject) => setTimeout(() => reject({ code: 'timeout' }), WRITE_TIMEOUT_MS))]);
@@ -229,6 +196,7 @@ export function cloudStore(): Store {
   return {
     initial,
     ready,
+    canPrint: false, // inside claude.ai the page can't open the print dialog; it saves a PDF instead
     start(dataCb, statusCb) {
       onData = dataCb;
       onStatus = statusCb;

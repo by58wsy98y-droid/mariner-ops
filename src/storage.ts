@@ -2,6 +2,10 @@
 import { DEFAULT_SECTIONS, DEFAULT_SETTINGS, FLUIDS } from './calc';
 import type { DayLog, FluidDay, Issue, SectionDef, Settings } from './types';
 
+type Body = Record<string, unknown>;
+const SETTINGS_ID = 'settings';
+export const DAY_PREFIX = 'day-';
+
 export interface AppData {
   settings: Settings;
   entries: DayLog[]; // sorted by date
@@ -34,6 +38,41 @@ export interface Store {
   replaceAll(prev: AppData, next: AppData): void;
   /** Offer a file to the user (backup .json or printable .pdf). */
   saveFile(filename: string, data: string | ArrayBuffer): Promise<SaveResult>;
+  /** The browser's own Print works here (own site: yes; inside claude.ai: no). */
+  canPrint: boolean;
+}
+
+// The log as documents: one for settings, one per day ("day-2026-10-17").
+export function toDocs(d: AppData): Map<string, Body> {
+  const docs = new Map<string, Body>([[SETTINGS_ID, { ...d.settings } as unknown as Body]]);
+  for (const e of d.entries) docs.set(DAY_PREFIX + e.date, e as unknown as Body);
+  return docs;
+}
+
+export function fromDocs(docs: Map<string, Body>): AppData {
+  const entries = [...docs]
+    .filter(([id]) => id.startsWith(DAY_PREFIX))
+    .map(([, body]) => normalizeDay(body))
+    .filter((e) => e.date)
+    .sort((a, b) => a.date.localeCompare(b.date));
+  return { settings: normalizeSettings(docs.get(SETTINGS_ID) as Partial<Settings> | undefined), entries };
+}
+
+/** An ordinary browser download (own site, or a page opened outside claude.ai). */
+export function saveInBrowser(filename: string, data: string | ArrayBuffer): 'saved' | 'unavailable' {
+  try {
+    const type = filename.endsWith('.pdf') ? 'application/pdf' : 'application/json';
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([data], { type }));
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    return 'saved';
+  } catch {
+    return 'unavailable';
+  }
 }
 
 export const emptyData = (): AppData => ({ settings: normalizeSettings({}), entries: [] });

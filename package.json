@@ -4,7 +4,9 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "build": "tsc --noEmit && vite build && node scripts/build-web.mjs",
+    "build": "npm run build:claude && npm run build:site",
+    "build:claude": "tsc --noEmit && vite build && node scripts/build-web.mjs",
+    "build:site": "tsc --noEmit && vite build -c vite.site.config.ts && node scripts/build-site.mjs",
     "test": "vitest run"
   },
   "dependencies": {

@@ -62,7 +62,9 @@ export default function Setup({ data, sync, onSettings, onRestore, onBackup, ask
         <p className="small">
           {sync.where === 'account'
             ? 'Your log is saved to your Claude account, so it shows on your phone and your laptop. A backup file is a spare copy you keep yourself (email it to yourself or keep it in Files/Drive).'
-            : 'Your log is only in this browser right now. Back up often and keep the file somewhere else.'}
+            : sync.fallback
+              ? 'Your log is only in this browser right now. Back up often and keep the file somewhere else.'
+              : 'Your log is kept on this device. Back up often and keep the file somewhere else (email it to yourself). The backup file is also how you move the log to another phone or laptop: Restore it there.'}
           {s.lastBackup ? ` Last backup: ${new Date(s.lastBackup).toLocaleString()}.` : ' No backup yet.'}
         </p>
         <div className="actions">

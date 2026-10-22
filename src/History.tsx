@@ -8,9 +8,10 @@ interface Props {
   chain: DayCalc[];
   onOpen: (date: string) => void;
   onPdf: (dates: string[]) => void;
+  onPrint?: (dates: string[]) => void;
 }
 
-export default function History({ data, chain, onOpen, onPdf }: Props) {
+export default function History({ data, chain, onOpen, onPdf, onPrint }: Props) {
   const dates = data.entries.map((e) => e.date);
   // Blank until picked, so the range always covers days that arrive later (from the other device).
   const [pickedFrom, setFrom] = useState('');
@@ -37,14 +38,21 @@ export default function History({ data, chain, onOpen, onPdf }: Props) {
     <div className="screen">
       <section className="card">
         <h2>Print several days</h2>
-        <p className="small muted">One PDF with each day on its own pages, for re-entering into the company site or for the file.</p>
+        <p className="small muted">Each day starts on a new page. Handy for re-entering into the company site or for the file.</p>
         <div className="grid2">
           <label htmlFor="pdf-from">From<input id="pdf-from" type="date" value={from} onChange={(e) => setFrom(e.target.value)} /></label>
           <label htmlFor="pdf-to">To<input id="pdf-to" type="date" value={to} onChange={(e) => setTo(e.target.value)} /></label>
         </div>
-        <button id="pdf-range" onClick={() => onPdf(inRange)} disabled={!inRange.length}>
-          Save PDF of {inRange.length} day{inRange.length === 1 ? '' : 's'}
-        </button>
+        <div className="actions">
+          {onPrint && (
+            <button id="print-range" onClick={() => onPrint(inRange)} disabled={!inRange.length}>
+              Print {inRange.length} day{inRange.length === 1 ? '' : 's'}
+            </button>
+          )}
+          <button id="pdf-range" className={onPrint ? 'secondary' : ''} onClick={() => onPdf(inRange)} disabled={!inRange.length}>
+            Save PDF of {inRange.length} day{inRange.length === 1 ? '' : 's'}
+          </button>
+        </div>
       </section>
 
       {[...months].map(([m, days]) => (

@@ -27,10 +27,18 @@ Your Claude account, in a space only you can read: the same log on phone and lap
 doesn't lose it. The page needs signal to open; if signal drops while it's open, changes are kept on the
 device and sent when signal returns (the line under the boat name says which). Back up now and then anyway.
 
+## Own-site version (GitHub Pages)
+The same app also runs as its own website, published from this repository by
+`.github/workflows/pages.yml` whenever `main` changes: https://by58wsy98y-droid.github.io/mariner-ops/
+That version keeps the log on the device (no Claude account), opens with no signal once it has been opened,
+and has a **Print** button. Move a log between devices or versions with Backup → Restore.
+On iPhone, add it to the home screen first and use it from the icon: the icon keeps its own copy of the log.
+
 ## For whoever maintains it
 - `npm test` runs the tests (`src/calc.test.ts` checks the math against the printed 10/20/2026 log in
   `seed/`; `src/cloudStore.test.ts` covers saving with no signal; `src/pdf.test.ts` the printout).
-- `npm run build` makes the page, `dist-web/engine-log.html`, which is published as a claude.ai artifact
-  (with the `db`, `user` and `downloads` capabilities). React and jsPDF load from cdnjs.
+- `npm run build:claude` makes the claude.ai page, `dist-web/engine-log.html` (an artifact with the `db`, `user`
+  and `downloads` capabilities; React and jsPDF load from cdnjs). `npm run build:site` makes the own-site version
+  in `dist-site/` (everything bundled, offline helper `sw.js`, saves on the device via `src/localStore.ts`).
 - Code: `src/calc.ts` all arithmetic · `src/cloudStore.ts` saving/sync · `src/pdf.ts` printout ·
   `src/DayScreen.tsx`, `src/History.tsx`, `src/Setup.tsx` screens · `src/App.tsx` shell.

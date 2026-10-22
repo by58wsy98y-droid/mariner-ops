@@ -1,7 +1,7 @@
 {
  "settings": {
-  "boatName": "Whitney Ann Cruse",
-  "chief": "Joel Muamba",
+  "boatName": "Sample Boat",
+  "chief": "Sample Chief",
   "start": {
    "date": "2026-10-20",
    "counters": {
@@ -72,7 +72,7 @@
  },
  "day": {
   "date": "2026-10-20",
-  "chief": "Joel Muamba",
+  "chief": "Sample Chief",
   "fluids": {
    "fuel": {
     "used": 978,
@@ -94,8 +94,8 @@
   "draftStern": 108,
   "loads": 2,
   "empties": 0,
-  "from": "winona",
-  "to": "stl",
+  "from": "port a",
+  "to": "port b",
   "cells": {
    "main.totalHours.port": {
     "today": 24
@@ -266,7 +266,7 @@
     "today": 0
    }
   },
-  "comments": "GAR/SAFE: LOW/GREEN. BEGINING OF WATCH WALKTHROUGH.\nSWITCHED TO STANDBY STEERIN PUMP\nREWIRED PORT SECONDARY WINCH DIRECTIONAL CONTROLLER. (WIRES WERE CUT)\nGRAVITATING FROM #3S INTO #4 FUEL TANK\nDRAINED BILGE IN RUDDER ROOM (PUMP FLOAT SWITCH HAD MALFUNCTIONED BUT WORKING AGAIN)\nREPLACED EXTERIOR LIGHTS ON HEAD DECK",
+  "comments": "BEGINNING OF WATCH WALKTHROUGH.\nSWITCHED PUMPS.\nCHECKED FILTERS.\nSAMPLE LINE FOUR\nSAMPLE LINE FIVE\nSAMPLE LINE SIX",
   "issues": []
  },
  "printed": {

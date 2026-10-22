@@ -16,12 +16,13 @@ interface Props {
   editStart: (date: string, fn: (b: Balances) => Balances) => void;
   onDelete: (date: string) => void;
   onPdf: (dates: string[]) => void;
+  onPrint?: (dates: string[]) => void;
   ask: Ask;
 }
 
 interface ResetTarget { key: string; title: string; prev: number }
 
-export default function DayScreen({ data, date, setDate, editDay, editStart, onDelete, onPdf, ask }: Props) {
+export default function DayScreen({ data, date, setDate, editDay, editStart, onDelete, onPdf, onPrint, ask }: Props) {
   const { settings, entries } = data;
   const saved = entries.find((e) => e.date === date);
   const day = saved ?? emptyDay(date, settings);
@@ -204,8 +205,13 @@ export default function DayScreen({ data, date, setDate, editDay, editStart, onD
         </button>
       </section>
 
-      <button id="pdf-day" className="big" onClick={() => onPdf([date])} disabled={!saved}>
-        Save printable PDF of this day
+      {onPrint && (
+        <button id="print-day" className="big" onClick={() => onPrint([date])} disabled={!saved}>
+          Print this day
+        </button>
+      )}
+      <button id="pdf-day" className={onPrint ? 'secondary' : 'big'} onClick={() => onPdf([date])} disabled={!saved}>
+        {onPrint ? 'Save as PDF' : 'Save printable PDF of this day'}
       </button>
       {saved && <button id="delete-day" className="danger" onClick={del}>Delete this day</button>}
       </>
