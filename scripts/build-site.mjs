@@ -14,7 +14,7 @@ const walk = (d) => {
 };
 walk(DIR);
 // jsPDF's HTML/SVG helpers are split into separate files this app never loads: don't make phones download them.
-const unused = /^assets\/(html2canvas|purify\.es|index\.es)-/;
+const unused = /^assets\/(html2canvas|purify|index\.es)[.-]/;
 for (let i = files.length - 1; i >= 0; i--) if (unused.test(files[i])) files.splice(i, 1);
 const hash = createHash('sha256');
 for (const f of files.sort()) hash.update(f).update(readFileSync(join(DIR, f)));
