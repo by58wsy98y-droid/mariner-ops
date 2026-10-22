@@ -5,7 +5,7 @@ printed log (fuel/lube/water, draft & tow, Main Engines, Gear Boxes, Generator E
 Auxiliary Equipment, comments and issues). You type **Today**; **Prev** and **Total** fill themselves in.
 
 ## Using it
-Open the web app link (it's in the chat where it was made) on your phone or laptop, signed in to Claude.
+Open **https://claude.ai/artifact/XVneZtspBkQY2DRkb9nwiu** on your phone or laptop, signed in to Claude (the link is private to you).
 Put it on your home screen: iPhone Safari → Share → **Add to Home Screen**; Android Chrome → ⋮ → **Add to Home screen**.
 
 - **Day**: pick the date (‹ › step a day). On a new day, **Start from [last day]** copies the hours run,
