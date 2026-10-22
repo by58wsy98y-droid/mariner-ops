@@ -37,6 +37,7 @@ export default function App({ store }: { store: Store }) {
   );
 
   const setDate = (d: string) => {
+    setPrintDates(null);
     shownToday.current = todayISO();
     setDateState(d);
   };
@@ -60,6 +61,7 @@ export default function App({ store }: { store: Store }) {
   }, []);
 
   const change = (fn: (d: AppData) => AppData, replace = false) => {
+    setPrintDates(null); // the print copy is only needed while printing; drop it once work goes on
     const prev = dataRef.current;
     const next = fn(prev);
     dataRef.current = next;
@@ -147,7 +149,26 @@ export default function App({ store }: { store: Store }) {
       }
     : undefined;
 
+  // The browser's own Print (Ctrl+P, Share → Print) prints the day on screen, laid out like the paper log.
+  const printNow = useRef({ screen, date, picked: printDates, saved: false });
+  printNow.current = { screen, date, picked: printDates, saved: data.entries.some((e) => e.date === date) };
+  useEffect(() => {
+    if (!store.canPrint) return;
+    const before = () => {
+      const n = printNow.current;
+      if (!n.picked && n.screen === 'day' && n.saved) flushSync(() => setPrintDates([n.date]));
+    };
+    const after = () => setPrintDates(null);
+    window.addEventListener('beforeprint', before);
+    window.addEventListener('afterprint', after);
+    return () => {
+      window.removeEventListener('beforeprint', before);
+      window.removeEventListener('afterprint', after);
+    };
+  }, [store]);
+
   const go = (sc: Screen) => {
+    setPrintDates(null);
     setScreen(sc);
     window.scrollTo(0, 0);
   };
@@ -165,8 +186,9 @@ export default function App({ store }: { store: Store }) {
         </div>
       </header>
 
-      {(needBackup || note || busy) && (
+      {(needBackup || note || busy || sync.advice) && (
         <div className="wrap banners">
+          {sync.advice && <div className="banner note" role="note"><div>{sync.advice}</div></div>}
           {busy && <div className="banner note" role="status">{busy}</div>}
           {needBackup && (
             <div className="banner note">
@@ -245,7 +267,14 @@ function SyncLine({ s }: { s: SyncState }) {
     return <div className="sync is-bad">This browser can't keep a copy. Keep this page open until it says Saved, and back up.</div>;
   if (s.fallback)
     return <div className="sync is-warn">Can't reach your Claude account. Saving on this device; it sends next time you open with signal.</div>;
-  if (s.where === 'device') return <div className="sync">✓ Saved on this device</div>;
+  if (s.where === 'device')
+    return (
+      <div className={`sync${s.offline === 'preparing' ? ' is-warn' : ''}`}>
+        ✓ Saved on this device
+        {s.offline === 'ready' && ' · Opens with no signal'}
+        {s.offline === 'preparing' && ' · Keep it open with signal a moment, until it says it opens with no signal'}
+      </div>
+    );
   if (s.loading) return <div className="sync">Loading your log from your Claude account…</div>;
   if (s.pending && (s.stalled || (typeof navigator !== 'undefined' && navigator.onLine === false)))
     return (

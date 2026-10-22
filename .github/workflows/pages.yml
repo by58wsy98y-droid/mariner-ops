@@ -1,8 +1,9 @@
-# Publishes the engine log to GitHub Pages every time main changes.
+# Publishes the engine log to GitHub Pages every time main or fuel-log-app changes.
+# Needs Settings → Pages → Source: GitHub Actions.
 name: Publish engine log site
 on:
   push:
-    branches: [main]
+    branches: [main, fuel-log-app]
   workflow_dispatch:
 permissions:
   contents: read

@@ -295,7 +295,7 @@ export function cloudStore(): Store {
     },
     async saveFile(filename, data) {
       // Opened as a plain page (not inside claude.ai): an ordinary browser download.
-      if (!(window as any).claude) return saveInBrowser(filename, data);
+      if (!(window as any).claude) return await saveInBrowser(filename, data);
       const downloads = await use('downloads');
       if (!downloads) return 'unavailable';
       try {

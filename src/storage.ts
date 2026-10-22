@@ -21,6 +21,10 @@ export interface SyncState {
   fallback: boolean; // wanted the account but couldn't reach it, saving in this browser for now
   notKept: boolean; // this browser refused to store anything, so unsent changes are only in memory
   error?: string;
+  /** Own-site version: whether the copy for opening with no signal is ready yet. */
+  offline?: 'ready' | 'preparing';
+  /** Something the user should know about where the log is kept (e.g. iPhone Safari tab). */
+  advice?: string;
 }
 
 export type SaveResult = 'saved' | 'declined' | 'unavailable';
@@ -58,10 +62,29 @@ export function fromDocs(docs: Map<string, Body>): AppData {
   return { settings: normalizeSettings(docs.get(SETTINGS_ID) as Partial<Settings> | undefined), entries };
 }
 
-/** An ordinary browser download (own site, or a page opened outside claude.ai). */
-export function saveInBrowser(filename: string, data: string | ArrayBuffer): 'saved' | 'unavailable' {
+const isIOS = () =>
+  typeof navigator !== 'undefined' &&
+  (/iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1));
+
+/**
+ * Save a file from the own-site version. On iPhone/iPad this opens the share sheet (Save to Files,
+ * Mail, Print for PDFs), which also says whether it was cancelled; elsewhere an ordinary download.
+ */
+export async function saveInBrowser(filename: string, data: string | ArrayBuffer): Promise<SaveResult> {
+  const type = filename.endsWith('.pdf') ? 'application/pdf' : 'application/json';
   try {
-    const type = filename.endsWith('.pdf') ? 'application/pdf' : 'application/json';
+    if (isIOS() && typeof File !== 'undefined') {
+      const file = new File([data], filename, { type });
+      if (navigator.canShare?.({ files: [file] })) {
+        try {
+          await navigator.share({ files: [file] });
+          return 'saved';
+        } catch (e) {
+          if ((e as Error).name === 'AbortError') return 'declined';
+          // NotAllowedError etc.: fall back to a download below
+        }
+      }
+    }
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([data], { type }));
     a.download = filename;
@@ -74,6 +97,10 @@ export function saveInBrowser(filename: string, data: string | ArrayBuffer): 'sa
     return 'unavailable';
   }
 }
+
+/** iPhone/iPad Safari tab rather than the Home Screen icon (Safari can clear a tab's site data after a week unused). */
+export const inIOSBrowserTab = () =>
+  isIOS() && !(navigator as any).standalone && !(typeof matchMedia !== 'undefined' && matchMedia('(display-mode: standalone)').matches);
 
 export const emptyData = (): AppData => ({ settings: normalizeSettings({}), entries: [] });
 

@@ -28,11 +28,15 @@ doesn't lose it. The page needs signal to open; if signal drops while it's open,
 device and sent when signal returns (the line under the boat name says which). Back up now and then anyway.
 
 ## Own-site version (GitHub Pages)
-The same app also runs as its own website, published from this repository by
-`.github/workflows/pages.yml` whenever `main` changes: https://by58wsy98y-droid.github.io/mariner-ops/
-That version keeps the log on the device (no Claude account), opens with no signal once it has been opened,
-and has a **Print** button. Move a log between devices or versions with Backup → Restore.
-On iPhone, add it to the home screen first and use it from the icon: the icon keeps its own copy of the log.
+The same app also runs as its own website: **https://by58wsy98y-droid.github.io/mariner-ops/**
+It's published by `.github/workflows/pages.yml` whenever `main` or `fuel-log-app` changes
+(Settings → Pages → Source must be **GitHub Actions**).
+
+That version keeps the log on the device (no Claude account), opens with no signal once the line under
+the boat name says "Opens with no signal", and has a **Print** button (or use the browser's own Print).
+Move a log between devices or versions with Backup → Restore.
+On iPhone, add it to the home screen first and use it only from the icon: the icon keeps its own copy of
+the log, and Safari can erase a site's data in a tab after a week unused.
 
 ## For whoever maintains it
 - `npm test` runs the tests (`src/calc.test.ts` checks the math against the printed 10/20/2026 log in

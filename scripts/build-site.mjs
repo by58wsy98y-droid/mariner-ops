@@ -13,6 +13,9 @@ const walk = (d) => {
   }
 };
 walk(DIR);
+// jsPDF's HTML/SVG helpers are split into separate files this app never loads: don't make phones download them.
+const unused = /^assets\/(html2canvas|purify\.es|index\.es)-/;
+for (let i = files.length - 1; i >= 0; i--) if (unused.test(files[i])) files.splice(i, 1);
 const hash = createHash('sha256');
 for (const f of files.sort()) hash.update(f).update(readFileSync(join(DIR, f)));
 const version = hash.digest('hex').slice(0, 12);
@@ -23,7 +26,12 @@ const FILES = ${JSON.stringify(['./', ...files])};
 const FONTS = 'engine-log-fonts';
 
 self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(FILES)).then(() => self.skipWaiting()));
+  // cache: 'reload' skips the browser's own short-term copy, so a new version never keeps an old page.
+  e.waitUntil(
+    caches.open(CACHE)
+      .then((c) => c.addAll(FILES.map((u) => new Request(u, { cache: 'reload' }))))
+      .then(() => self.skipWaiting())
+  );
 });
 
 self.addEventListener('activate', (e) => {
@@ -51,12 +59,13 @@ self.addEventListener('fetch', (e) => {
     return;
   }
   if (url.origin !== self.location.origin) return;
-  // The page itself: newest when there's signal, the kept copy when not.
+  // The page itself: always the kept copy, so it opens at once even on one bar of signal.
+  // (The browser checks for a new version in the background; it shows on the next open.)
   if (req.mode === 'navigate') {
-    e.respondWith(fetch(req).catch(() => caches.match('./', { ignoreSearch: true }).then((r) => r || caches.match('index.html'))));
+    e.respondWith(caches.open(CACHE).then((c) => c.match('./')).then((r) => r || fetch(req)));
     return;
   }
-  e.respondWith(caches.match(req, { ignoreSearch: true }).then((hit) => hit || fetch(req)));
+  e.respondWith(caches.open(CACHE).then((c) => c.match(req, { ignoreSearch: true })).then((hit) => hit || fetch(req)));
 });
 `;
 writeFileSync(join(DIR, 'sw.js'), sw);

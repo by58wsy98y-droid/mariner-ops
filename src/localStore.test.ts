@@ -59,3 +59,18 @@ describe('own-site version: saving on this device', () => {
     expect(status?.error).toMatch(/didn't save/);
   });
 });
+
+describe('two copies of the app open at once', () => {
+  it("a copy that comes back to the front shows what the other saved, instead of saving its old view over it", () => {
+    const handlers: Record<string, (e?: any) => void> = {};
+    vi.stubGlobal('window', { addEventListener: (ev: string, fn: any) => (handlers['w:' + ev] = fn), removeEventListener: () => {} });
+    vi.stubGlobal('document', { visibilityState: 'visible', addEventListener: (ev: string, fn: any) => (handlers['d:' + ev] = fn), removeEventListener: () => {} });
+    const a = localStore();
+    let shown: AppData = a.initial;
+    a.start((d) => (shown = d), () => {});
+    const b = localStore(); // the other copy saves a day
+    b.persist(b.initial, { ...b.initial, entries: [day('2026-10-21', 24)] });
+    handlers['w:storage']({ key: 'engine-log:doc:day-2026-10-21' });
+    expect(shown.entries.map((e) => e.date)).toEqual(['2026-10-21']);
+  });
+});
