@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest';
 import seed from '../seed/log-2026-10-20.json';
 import {
   DEFAULT_SECTIONS, balancesBefore, cellKey, computeChain, copyFrom, emptyDay, fillHours, fmt2, parseNum,
-  sectionKeys, setReset, setToday, shiftDate, usedFromEnding,
+  sectionKeys, sectionsForDay, setReset, setToday, shiftDate, usedFromEnding,
 } from './calc';
-import { normalizeSettings } from './storage';
+import { normalize, normalizeSettings } from './storage';
 import type { DayLog, Settings } from './types';
 
 const settings: Settings = normalizeSettings(seed.settings as Partial<Settings>);
@@ -151,5 +151,75 @@ describe('number entry and dates', () => {
   it('steps across month ends', () => {
     expect(shiftDate('2026-10-31', 1)).toBe('2026-11-01');
     expect(shiftDate('2026-11-01', -1)).toBe('2026-10-31');
+  });
+});
+
+describe('review fixes', () => {
+  const FUEL = (d: DayLog, f: Partial<DayLog['fluids']['fuel']>) => ({ ...d, fluids: { ...d.fluids, fuel: { ...d.fluids.fuel, ...f } } });
+
+  it('a sounded Ending stays put when Purchased is typed afterwards; Used follows', () => {
+    let d = FUEL(day('2026-10-21'), { ending: 81900 });
+    d = FUEL(d, { purchased: 7500 });
+    const c = computeChain([oct20, d], settings)[1].fluids.fuel;
+    expect(c).toMatchObject({ begin: 75356, purchased: 7500, end: 81900, used: 956 });
+  });
+
+  it("correcting an earlier day doesn't move a later sounded Ending", () => {
+    const d22 = FUEL(day('2026-10-22'), { ending: 73500 });
+    const d21 = FUEL(day('2026-10-21'), { used: 1056 });
+    const c = computeChain([oct20, d21, d22], settings)[2].fluids.fuel;
+    expect(c.end).toBe(73500);
+    expect(c.used).toBe(800);
+  });
+
+  it('days before the start day never shift the start day', () => {
+    const d19 = setToday(day('2026-10-19'), K('main', 'totalHours', 'port'), 24);
+    const chain = computeChain([d19, oct20], settings);
+    expect(chain[1].cells[K('main', 'totalHours', 'port')].total).toBe(82707);
+  });
+
+  it('a new line added later starts from the current reading typed for it', () => {
+    let d = setToday(day('2026-10-21'), 'aux.comp4.one', 2);
+    d = { ...d, cells: { ...d.cells, 'aux.comp4.one': { ...d.cells['aux.comp4.one'], start: 5000 } } };
+    const d22 = setToday(day('2026-10-22'), 'aux.comp4.one', 1);
+    const chain = computeChain([oct20, d, d22], settings);
+    expect(chain[1].cells['aux.comp4.one']).toMatchObject({ prev: 5000, total: 5002 });
+    expect(chain[2].cells['aux.comp4.one']).toMatchObject({ prev: 5002, total: 5003 });
+  });
+
+  it('zero never shows as -0.00', () => {
+    const d = { ...day('2026-10-21'), fluids: { ...day('2026-10-21').fluids, lube: { used: 1106.9, purchased: null, transferred: 0.1 } } };
+    expect(fmt2(computeChain([oct20, d], settings)[1].fluids.lube.end)).toBe('0.00');
+  });
+
+  it('"Start from" fills only blanks on a day already started', () => {
+    const cur = setToday({ ...day('2026-10-21'), from: 'cairo' }, K('main', 'totalHours', 'port'), 12);
+    const d = copyFrom(oct20, '2026-10-21', settings, cur);
+    expect(d.cells[K('main', 'totalHours', 'port')].today).toBe(12);
+    expect(d.cells[K('main', 'totalHours', 'stbd')].today).toBe(24);
+    expect(d.from).toBe('cairo');
+    expect(d.to).toBe('stl');
+  });
+
+  it('"Fill hours" and "Start from" leave the lines the log keeps at 0 alone', () => {
+    const gear = DEFAULT_SECTIONS.find((s) => s.id === 'gear')!;
+    const d = fillHours(day('2026-10-21'), gear, 'port', 24);
+    expect(d.cells[K('gear', 'pilotGreased', 'port')]).toBeUndefined();
+    expect(d.cells[K('gear', 'gearOH', 'port')].today).toBe(24);
+  });
+
+  it('a line taken off still shows on days that have numbers for it, not on new days', () => {
+    const s2: Settings = {
+      ...settings,
+      sections: settings.sections.map((x) => (x.id === 'main' ? { ...x, rows: x.rows.map((r) => (r.id === 'racor' ? { ...r, removed: true } : r)) } : x)),
+    };
+    const has = (d: DayLog) => sectionsForDay(s2.sections, d).find((x) => x.id === 'main')!.rows.some((r) => r.id === 'racor');
+    expect(has(oct20)).toBe(true);
+    expect(has(day('2026-10-21'))).toBe(false);
+    expect(computeChain([oct20], s2)[0].cells[K('main', 'racor', 'port')].total).toBe(84);
+  });
+
+  it('an old fuel-log backup is refused instead of loaded', () => {
+    expect(() => normalize({ app: 'towboat-fuel-log', settings: {}, entries: [{ date: '2026-10-18', tanks: [] }] })).toThrow(/different app/);
   });
 });

@@ -5,8 +5,10 @@ export type FluidId = 'fuel' | 'lube' | 'water';
 export interface RowDef {
   id: string;
   label: string;
-  /** 'hours' lines are filled by "ran __ hrs"; 'added' lines (lube oil added) are typed by hand. */
+  /** 'hours' lines are filled by "ran __ hrs"; 'added' lines (lube oil added, compressors...) are typed by hand. */
   kind: 'hours' | 'added';
+  /** Taken off in Setup: hidden on days that have nothing typed for it, still shown and printed where it does. */
+  removed?: boolean;
 }
 
 /** One equipment sheet, e.g. Main Engines. */
@@ -15,6 +17,7 @@ export interface SectionDef {
   title: string;
   sided: boolean; // Port + Starboard columns, or a single column
   rows: RowDef[];
+  removed?: boolean; // see RowDef.removed
 }
 
 /** Prev values carried into a day: one per counter ("main.fuelFilter.port"), plus fluid balances. */
@@ -27,7 +30,8 @@ export interface Settings {
   boatName: string;
   chief: string; // default Chief Engineer for new days
   sections: SectionDef[];
-  start: Balances; // Prev values for the very first day
+  /** Prev values and fluid Beginnings for the first day of the log, `date`. Days before it are not allowed. */
+  start: Balances & { date?: string };
   lastBackup: string | null; // ISO timestamp
 }
 
@@ -35,12 +39,16 @@ export interface Cell {
   today: number | null;
   /** Counter reset this day (filter changed, overhaul...): Prev starts from `to` instead of yesterday's total. */
   reset?: { to: number; note: string };
+  /** Current reading for a line added after the first day (its Prev that day; not printed as a reset). */
+  start?: number;
 }
 
 export interface FluidDay {
   used: number | null;
   purchased: number | null;
   transferred: number | null; // transferred off the boat
+  /** Ending typed from soundings; when set, Used is worked out from it and the Ending stays put. */
+  ending?: number | null;
 }
 
 export interface Issue {

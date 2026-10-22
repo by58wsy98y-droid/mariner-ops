@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import {
-  FLUIDS, SIDE_LABEL, balancesBefore, cellKey, computeDay, copyFrom, emptyDay, fillHours, fmt2, fmtIn,
-  niceDate, parseNum, sectionKeys, setReset, setToday, shiftDate, sidesOf, todayISO, usedFromEnding,
+  FLUIDS, SIDE_LABEL, balancesBefore, cellKey, computeDay, copyFrom, emptyDay, fillHours, fmt2, fmtIn, hasEntry,
+  niceDate, parseNum, sectionKeys, sectionsForDay, setReset, setStartValue, setToday, shiftDate, sidesOf, startDateOf, todayISO,
 } from './calc';
 import { Modal, type Ask } from './Confirm';
 import NumField from './NumField';
@@ -13,7 +13,7 @@ interface Props {
   date: string;
   setDate: (d: string) => void;
   editDay: (date: string, fn: (d: DayLog) => DayLog) => void;
-  editStart: (fn: (b: Balances) => Balances) => void;
+  editStart: (date: string, fn: (b: Balances) => Balances) => void;
   onDelete: (date: string) => void;
   onPdf: (dates: string[]) => void;
   ask: Ask;
@@ -26,16 +26,21 @@ export default function DayScreen({ data, date, setDate, editDay, editStart, onD
   const saved = entries.find((e) => e.date === date);
   const day = saved ?? emptyDay(date, settings);
   const earlier = entries.filter((e) => e.date < date);
-  const isFirst = earlier.length === 0;
+  const startDate = startDateOf(entries, settings);
+  const isFirst = startDate ? date === startDate : true; // the start day: its Prev boxes hold the starting values
+  const beforeStart = !!startDate && date < startDate;
   const lastBefore = earlier[earlier.length - 1];
+  const typedHours = Object.values(day.cells).some((c) => c.today != null);
   const before = useMemo(() => balancesBefore(entries, settings, date), [entries, settings, date]);
   const calc = computeDay(day, before, sectionKeys(settings.sections));
   const [resetFor, setResetFor] = useState<ResetTarget | null>(null);
 
   const edit = (fn: (d: DayLog) => DayLog) => editDay(date, fn);
   const setField = <K extends keyof DayLog>(k: K, v: DayLog[K]) => edit((d) => ({ ...d, [k]: v }));
-  const setFluid = (id: FluidId, k: 'used' | 'purchased' | 'transferred', v: number | null) =>
-    edit((d) => ({ ...d, fluids: { ...d.fluids, [id]: { ...d.fluids[id], [k]: v } } }));
+  const setFluid = (id: FluidId, patch: Partial<DayLog['fluids'][FluidId]>) =>
+    edit((d) => ({ ...d, fluids: { ...d.fluids, [id]: { ...d.fluids[id], ...patch } } }));
+  // A counter with no history yet (a line added after the start day) gets a box for its current reading.
+  const newLine = (key: string) => settings.start.counters[key] === undefined && !earlier.some((e) => hasEntry(e, key));
   const setIssue = (i: number, patch: Partial<Issue>) =>
     edit((d) => ({ ...d, issues: d.issues.map((x, j) => (j === i ? { ...x, ...patch } : x)) }));
 
@@ -61,20 +66,34 @@ export default function DayScreen({ data, date, setDate, editDay, editStart, onD
             </>
           )}
         </div>
-        {!saved && lastBefore && (
-          <button id="copy-yesterday" onClick={() => editDay(date, () => copyFrom(lastBefore, date, settings))}>
-            Start from {niceDate(lastBefore.date)}
-          </button>
+        {!beforeStart && lastBefore && !typedHours && (
+          <>
+            <button id="copy-yesterday" onClick={() => editDay(date, (cur) => copyFrom(lastBefore, date, settings, cur))}>
+              Start from {niceDate(lastBefore.date)}
+            </button>
+            <p className="small muted">Fills in that day's hours run, chief, draft &amp; tow and open issues. Anything you've already typed stays.</p>
+          </>
         )}
-        {!saved && lastBefore && (
-          <p className="small muted">Copies that day's hours run, chief, draft &amp; tow and open issues. Then change what's different.</p>
-        )}
-        {isFirst && (
+        {isFirst && !beforeStart && (
           <p className="note-inline">
-            First day in the log: type the <b>Prev</b> numbers from your last printed log. After this, every day starts from the day before.
+            <b>First day of the log.</b> In each <b>Prev</b> box type the <b>Total</b> from your last printed log before this date, and for
+            Fuel, Lube and Water its <b>Ending Balance</b>. (Entering the printed day itself? Then copy its Prev and Beginning columns.)
+            After this, every day starts from the day before.
           </p>
         )}
       </div>
+
+      {beforeStart ? (
+        <section className="card">
+          <h2>Before the start of the log</h2>
+          <p>
+            Your log starts on <b>{niceDate(startDate!)}</b>. That day's Prev numbers are the starting point for every day after it, so
+            earlier days can't be added here.
+          </p>
+          <button className="secondary" onClick={() => setDate(startDate!)}>Go to {niceDate(startDate!)}</button>
+        </section>
+      ) : (
+      <>
 
       <section className="card">
         <label htmlFor="chief">
@@ -96,22 +115,26 @@ export default function DayScreen({ data, date, setDate, editDay, editStart, onD
                 <span className="small muted">
                   Beginning{' '}
                   {isFirst ? (
-                    <NumField id={`begin-${id}`} className="inline" aria-label={`${label} beginning balance`} value={settings.start.fluids[id]} onChange={(v) => editStart((b) => ({ ...b, fluids: { ...b.fluids, [id]: v ?? 0 } }))} />
+                    <NumField id={`begin-${id}`} className="inline" aria-label={`${label} beginning balance`} value={settings.start.fluids[id]} onChange={(v) => editStart(date, (b) => ({ ...b, fluids: { ...b.fluids, [id]: v ?? 0 } }))} />
                   ) : (
                     <b className="num">{fmt2(c.begin)}</b>
                   )}
                 </span>
               </div>
               <div className="grid4">
-                {(['used', 'purchased', 'transferred'] as const).map((k) => (
+                <label htmlFor={`${id}-used`}>
+                  Used
+                  <NumField id={`${id}-used`} value={f.ending != null ? c.used : f.used} onChange={(v) => setFluid(id, { used: v, ending: null })} placeholder="0" />
+                </label>
+                {(['purchased', 'transferred'] as const).map((k) => (
                   <label key={k} htmlFor={`${id}-${k}`}>
                     {k === 'transferred' ? 'Transferred off' : k}
-                    <NumField id={`${id}-${k}`} value={f[k]} onChange={(v) => setFluid(id, k, v)} placeholder="0" />
+                    <NumField id={`${id}-${k}`} value={f[k]} onChange={(v) => setFluid(id, { [k]: v })} placeholder="0" />
                   </label>
                 ))}
                 <label htmlFor={`${id}-end`} className="ending">
-                  Ending
-                  <NumField id={`${id}-end`} value={c.end} onChange={(v) => setFluid(id, 'used', v == null ? null : usedFromEnding(c.begin, c.purchased, c.transferred, v))} />
+                  Ending{f.ending != null ? ' (sounded)' : ''}
+                  <NumField id={`${id}-end`} value={c.end} onChange={(v) => setFluid(id, v == null ? { ending: null } : { ending: v, used: null })} />
                 </label>
               </div>
             </div>
@@ -131,16 +154,18 @@ export default function DayScreen({ data, date, setDate, editDay, editStart, onD
         </div>
       </section>
 
-      {settings.sections.map((sec) => (
+      {sectionsForDay(settings.sections, day).map((sec) => (
         <Sheet
-          key={sec.id}
+          key={`${date}-${sec.id}`}
           sec={sec}
           day={day}
           calc={calc.cells}
           isFirst={isFirst}
+          newLine={newLine}
           start={settings.start}
           onToday={(key, v) => edit((d) => setToday(d, key, v))}
-          onPrev={(key, v) => editStart((b) => ({ ...b, counters: { ...b.counters, [key]: v ?? 0 } }))}
+          onPrev={(key, v) => editStart(date, (b) => ({ ...b, counters: { ...b.counters, [key]: v ?? 0 } }))}
+          onStartValue={(key, v) => edit((d) => setStartValue(d, key, v))}
           onFill={(side, hrs) => edit((d) => fillHours(d, sec, side, hrs))}
           onReset={setResetFor}
         />
@@ -183,6 +208,8 @@ export default function DayScreen({ data, date, setDate, editDay, editStart, onD
         Save printable PDF of this day
       </button>
       {saved && <button id="delete-day" className="danger" onClick={del}>Delete this day</button>}
+      </>
+      )}
 
       {resetFor && (
         <ResetDialog
@@ -204,15 +231,17 @@ interface SheetProps {
   day: DayLog;
   calc: ReturnType<typeof computeDay>['cells'];
   isFirst: boolean;
+  newLine: (key: string) => boolean;
   start: Balances;
   onToday: (key: string, v: number | null) => void;
   onPrev: (key: string, v: number | null) => void;
+  onStartValue: (key: string, v: number | null) => void;
   onFill: (side: Side, hrs: number) => void;
   onReset: (t: ResetTarget) => void;
 }
 
 /** One equipment sheet (Main Engines, Gear Boxes, ...): Prev + Today = Total for each line and side. */
-function Sheet({ sec, day, calc, isFirst, start, onToday, onPrev, onFill, onReset }: SheetProps) {
+function Sheet({ sec, day, calc, isFirst, newLine, start, onToday, onPrev, onStartValue, onFill, onReset }: SheetProps) {
   const sides = sidesOf(sec);
   const [ran, setRan] = useState<Record<string, string>>({});
   const fill = () => {
@@ -225,6 +254,7 @@ function Sheet({ sec, day, calc, isFirst, start, onToday, onPrev, onFill, onRese
   return (
     <section className="card sheet">
       <h2>{sec.title}</h2>
+      {sec.rows.some((r) => r.kind === 'hours') && (
       <div className="fillbar">
         {sides.map((side) => (
           <label key={side} htmlFor={`ran-${sec.id}-${side}`}>
@@ -236,6 +266,7 @@ function Sheet({ sec, day, calc, isFirst, start, onToday, onPrev, onFill, onRese
           Fill hours
         </button>
       </div>
+      )}
       <div className={`sidehead ${sec.sided ? 'two' : 'one'}`}>
         <span />
         {sides.map((s) => <span key={s}>{s === 'one' ? '' : SIDE_LABEL[s]}</span>)}
@@ -255,6 +286,8 @@ function Sheet({ sec, day, calc, isFirst, start, onToday, onPrev, onFill, onRese
                     <span className="reset-tag">Reset {fmt2(cell.reset.to)}</span>
                   ) : isFirst ? (
                     <NumField id={`prev-${key}`} className="inline" aria-label={`${where} prev`} value={start.counters[key] ?? null} onChange={(v) => onPrev(key, v)} placeholder="Prev" />
+                  ) : newLine(key) ? (
+                    <NumField id={`prev-${key}`} className="inline" aria-label={`${where} current reading`} value={cell?.start ?? null} onChange={(v) => onStartValue(key, v)} placeholder="Current" />
                   ) : (
                     <span className="num">{fmt2(c.prev)}</span>
                   )}

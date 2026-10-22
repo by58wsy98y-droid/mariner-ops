@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { computeChain, emptyDay, todayISO } from './calc';
+import { balancesBefore, computeChain, emptyDay, startDateOf, todayISO } from './calc';
 import { backupFile, pdfName, type AppData, type Store, type SyncState } from './storage';
 import { buildPdf, pdfLibFromWindow } from './pdf';
 import type { Balances, DayLog, Settings } from './types';
@@ -14,9 +14,12 @@ const BACKUP_REMIND_DAYS = 7;
 export default function App({ store }: { store: Store }) {
   const [data, setData] = useState<AppData>(store.initial);
   const dataRef = useRef(data); // always the latest, so saves never start from a stale copy
-  const [sync, setSync] = useState<SyncState>({ where: 'account', loading: !store.ready, pending: 0, fallback: false });
+  const [sync, setSync] = useState<SyncState>({
+    where: 'account', ready: store.ready, loading: true, pending: 0, stalled: false, fallback: false, notKept: false,
+  });
   const [screen, setScreen] = useState<Screen>('day');
-  const [date, setDate] = useState(todayISO);
+  const [date, setDateState] = useState(todayISO);
+  const shownToday = useRef(todayISO()); // the calendar day when "today" was last put on screen
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState('');
   const [ask, dialog] = useAsk();
@@ -30,6 +33,29 @@ export default function App({ store }: { store: Store }) {
     [store]
   );
 
+  const setDate = (d: string) => {
+    shownToday.current = todayISO();
+    setDateState(d);
+  };
+
+  // A page left open overnight moves on to the new day, instead of writing into yesterday's log.
+  useEffect(() => {
+    const roll = () => {
+      const now = todayISO();
+      if (now === shownToday.current) return;
+      setDateState((d) => (d === shownToday.current ? now : d));
+      shownToday.current = now;
+    };
+    const t = setInterval(roll, 60000);
+    document.addEventListener('visibilitychange', roll);
+    window.addEventListener('focus', roll);
+    return () => {
+      clearInterval(t);
+      document.removeEventListener('visibilitychange', roll);
+      window.removeEventListener('focus', roll);
+    };
+  }, []);
+
   const change = (fn: (d: AppData) => AppData, replace = false) => {
     const prev = dataRef.current;
     const next = fn(prev);
@@ -39,21 +65,44 @@ export default function App({ store }: { store: Store }) {
     else store.persist(prev, next);
   };
 
+  // The very first day typed in a new log becomes the start day (its Prev numbers are the starting values).
+  const withStart = (d: AppData, day: string): Settings =>
+    startDateOf(d.entries, d.settings) ? d.settings : { ...d.settings, start: { ...d.settings.start, date: day } };
+
   const editDay = (day: string, fn: (d: DayLog) => DayLog) =>
     change((d) => {
       const cur = d.entries.find((e) => e.date === day) ?? emptyDay(day, d.settings);
       const next = fn(cur);
-      return { ...d, entries: [...d.entries.filter((e) => e.date !== day), next].sort((a, b) => a.date.localeCompare(b.date)) };
+      return {
+        settings: withStart(d, day),
+        entries: [...d.entries.filter((e) => e.date !== day), next].sort((a, b) => a.date.localeCompare(b.date)),
+      };
     });
   const editSettings = (fn: (s: Settings) => Settings) => change((d) => ({ ...d, settings: fn(d.settings) }));
-  const editStart = (fn: (b: Balances) => Balances) => editSettings((s) => ({ ...s, start: fn(s.start) }));
-  const deleteDay = (day: string) => change((d) => ({ ...d, entries: d.entries.filter((e) => e.date !== day) }));
+  const editStart = (day: string, fn: (b: Balances) => Balances) =>
+    change((d) => {
+      const s = withStart(d, day);
+      return { ...d, settings: { ...s, start: { ...s.start, ...fn(s.start) } } };
+    });
+  // Deleting the start day: the next day becomes the start day, starting from the deleted day's totals,
+  // so every later number stays the same.
+  const deleteDay = (day: string) =>
+    change((d) => {
+      const entries = d.entries.filter((e) => e.date !== day);
+      const next = entries.find((e) => e.date > day);
+      if (startDateOf(d.entries, d.settings) !== day || !next) {
+        const settings = entries.length ? d.settings : { ...d.settings, start: { ...d.settings.start, date: undefined } };
+        return { settings, entries };
+      }
+      const carried = balancesBefore(d.entries, d.settings, next.date);
+      return { settings: { ...d.settings, start: { ...carried, date: next.date } }, entries };
+    });
 
   const s = data.settings;
   const chain = useMemo(() => computeChain(data.entries, s), [data.entries, s]);
   const daysSinceBackup = s.lastBackup ? (Date.now() - Date.parse(s.lastBackup)) / 86400000 : Infinity;
   const needBackup = data.entries.length > 0 && daysSinceBackup > BACKUP_REMIND_DAYS;
-  const waiting = sync.loading && !store.ready;
+  const waiting = !sync.ready;
 
   const backup = async () => {
     setNote('');
@@ -123,8 +172,20 @@ export default function App({ store }: { store: Store }) {
       <main className="wrap">
         {waiting ? (
           <section className="card">
-            <h2>Loading your log</h2>
-            <p>Getting your saved days from your Claude account. This needs a signal the first time on each device.</p>
+            {sync.fallback ? (
+              <>
+                <h2>Can't open your log here yet</h2>
+                <p>
+                  Your Claude account didn't answer, and this device doesn't have a copy of your log yet. Get a signal and reopen the
+                  page. Nothing has been lost.
+                </p>
+              </>
+            ) : (
+              <>
+                <h2>Loading your log</h2>
+                <p>Getting your saved days from your Claude account. This needs a signal the first time on each device.</p>
+              </>
+            )}
           </section>
         ) : (
           <>
@@ -163,14 +224,17 @@ export default function App({ store }: { store: Store }) {
 
 function SyncLine({ s }: { s: SyncState }) {
   if (s.error) return <div className="sync is-bad">{s.error}</div>;
-  if (s.fallback) return <div className="sync is-warn">Can't reach your Claude account. Saving in this browser; it sends next time.</div>;
-  if (s.where === 'device') return null;
-  if (s.loading) return <div className="sync">Loading…</div>;
-  if (s.pending)
+  if (s.notKept && s.pending)
+    return <div className="sync is-bad">This browser can't keep a copy. Keep this page open until it says Saved, and back up.</div>;
+  if (s.fallback)
+    return <div className="sync is-warn">Can't reach your Claude account. Saving on this device; it sends next time you open with signal.</div>;
+  if (s.loading) return <div className="sync">Loading your log from your Claude account…</div>;
+  if (s.pending && (s.stalled || (typeof navigator !== 'undefined' && navigator.onLine === false)))
     return (
       <div className="sync is-warn">
-        {s.pending} change{s.pending > 1 ? 's' : ''} waiting for signal · kept on this phone, sends by itself
+        No signal · {s.pending} change{s.pending > 1 ? 's' : ''} kept on this device, sends by itself
       </div>
     );
+  if (s.pending) return <div className="sync">Saving…</div>;
   return <div className="sync">✓ Saved to your Claude account</div>;
 }

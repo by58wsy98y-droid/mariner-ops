@@ -1,6 +1,6 @@
 // Printable copy of one or more days, laid out like the company's Daily Engine Maintenance sheets.
 // The claude.ai page can't open a print dialog, so the log is printed from a saved PDF.
-import { FLUIDS, cellKey, computeChain, fmt2, sidesOf, usDate } from './calc';
+import { FLUIDS, cellKey, computeChain, fmt2, sectionsForDay, sidesOf, usDate } from './calc';
 import type { AppData } from './storage';
 import type { CellCalc, DayCalc, DayLog, Issue } from './types';
 
@@ -17,11 +17,16 @@ export function pdfLibFromWindow(): PdfLib | null {
 }
 
 const M = 36; // page margin, points
-const LINE = 17; // height of a one-line table row at 9pt, points
-// Rough height of a table, so a sheet that won't fit goes to the next page whole instead of splitting.
-const rowsHeight = (labels: string[], chars: number) => labels.reduce((h, l) => h + (l.length > chars ? LINE + 10 : LINE), 0);
 const blank = (n: number | null | undefined) => (n == null ? '' : fmt2(n));
-const resetText = (c: CellCalc) => (c.reset ? c.reset.note + (c.reset.to ? ` (from ${fmt2(c.reset.to)})` : '') : '');
+
+// The PDF's built-in font only has Western characters: spell out the common symbols, mark anything else.
+const SYMBOLS: Record<string, string> = {
+  'Δ': 'D', '∆': 'D', '≥': '>=', '≤': '<=', '→': '->', '←': '<-', '✓': 'OK', '✔': 'OK', '×': 'x', '°': '°', '±': '+/-', '½': '1/2', '¼': '1/4', '¾': '3/4',
+  '‘': "'", '’': "'", '“': '"', '”': '"', '–': '-', '—': '-', '…': '...',
+};
+export const pdfText = (t: string) =>
+  [...t].map((ch) => SYMBOLS[ch] ?? (ch.charCodeAt(0) <= 0xff ? ch : '?')).join('');
+const resetText = (c: CellCalc) => (c.reset ? pdfText(c.reset.note) + (c.reset.to ? ` (from ${fmt2(c.reset.to)})` : '') : '');
 
 export function buildPdf(lib: PdfLib, data: AppData, dates: string[]): ArrayBuffer {
   const { settings } = data;
@@ -32,6 +37,7 @@ export function buildPdf(lib: PdfLib, data: AppData, dates: string[]): ArrayBuff
   const H = doc.internal.pageSize.getHeight();
   const grid = {
     theme: 'grid',
+    rowPageBreak: 'avoid',
     margin: { left: M, right: M, top: M, bottom: M + 14 },
     styles: { font: 'helvetica', fontSize: 9, cellPadding: 3, textColor: 20, lineColor: 90, lineWidth: 0.5, valign: 'middle' },
     headStyles: { fillColor: 225, textColor: 20, fontStyle: 'bold', halign: 'center' },
@@ -62,6 +68,12 @@ export function buildPdf(lib: PdfLib, data: AppData, dates: string[]): ArrayBuff
     return y + 5;
   };
   const end = () => (doc as any).lastAutoTable.finalY as number;
+  // How tall a table will be: draw it once on a scratch page and measure.
+  const measure = (options: any) => {
+    const scratch = new lib.jsPDF({ orientation: 'landscape', unit: 'pt', format: 'letter' });
+    lib.autoTable(scratch, { ...options, startY: M });
+    return (scratch as any).lastAutoTable.finalY - M;
+  };
 
   days.forEach((day, i) => {
     if (i > 0) doc.addPage();
@@ -69,7 +81,7 @@ export function buildPdf(lib: PdfLib, data: AppData, dates: string[]): ArrayBuff
     const calc = calcs.get(day.date)!;
     let y = heading(day);
 
-    y = title(`Chief Engineer: ${day.chief || ''}`, y + 4);
+    y = title(`Chief Engineer: ${pdfText(day.chief || '')}`, y + 4);
     lib.autoTable(doc, {
       ...grid,
       startY: y + 2,
@@ -77,7 +89,7 @@ export function buildPdf(lib: PdfLib, data: AppData, dates: string[]): ArrayBuff
       body: FLUIDS.map(({ id, label }) => {
         const c = calc.fluids[id];
         const f = day.fluids?.[id];
-        return [label, fmt2(c.begin), blank(f?.used), blank(f?.purchased), blank(f?.transferred), fmt2(c.end)];
+        return [label, fmt2(c.begin), f?.ending != null ? fmt2(c.used) : blank(f?.used), blank(f?.purchased), blank(f?.transferred), fmt2(c.end)];
       }),
       columnStyles: { 0: { fontStyle: 'bold', halign: 'left' }, 1: { halign: 'right' }, 2: { halign: 'right' }, 3: { halign: 'right' }, 4: { halign: 'right' }, 5: { halign: 'right' } },
     });
@@ -86,8 +98,8 @@ export function buildPdf(lib: PdfLib, data: AppData, dates: string[]): ArrayBuff
       startY: end() + 10,
       tableWidth: 520,
       body: [
-        ['Draft (Bow)', blank(day.draftBow), 'Load', blank(day.loads), 'From', day.from || ''],
-        ['Draft (Stern)', blank(day.draftStern), 'Empty', blank(day.empties), 'To', day.to || ''],
+        ['Draft (Bow)', blank(day.draftBow), 'Load', blank(day.loads), 'From', pdfText(day.from || '')],
+        ['Draft (Stern)', blank(day.draftStern), 'Empty', blank(day.empties), 'To', pdfText(day.to || '')],
       ],
       columnStyles: {
         0: { fontStyle: 'bold', cellWidth: 90 }, 1: { halign: 'right', cellWidth: 70 }, 2: { fontStyle: 'bold', cellWidth: 60 },
@@ -96,9 +108,7 @@ export function buildPdf(lib: PdfLib, data: AppData, dates: string[]): ArrayBuff
     });
     y = end() + 22;
 
-    for (const sec of settings.sections) {
-      const need = 22 + (sec.sided ? 2 : 1) * LINE + rowsHeight(sec.rows.map((r) => r.label), sec.sided ? 30 : 50);
-      y = title(sec.title, room(y, need, day));
+    for (const sec of sectionsForDay(settings.sections, day)) {
       const sides = sidesOf(sec);
       const row = (rowId: string) =>
         sides.flatMap((side) => {
@@ -113,34 +123,35 @@ export function buildPdf(lib: PdfLib, data: AppData, dates: string[]): ArrayBuff
         : [['Label', 'Reset Comments', 'Prev', 'Today', 'Total']];
       const numCols: Record<number, any> = {};
       sides.forEach((_, s) => [2, 3, 4].forEach((k) => (numCols[s * 4 + k] = { halign: 'right' })));
-      lib.autoTable(doc, {
+      const table = {
         ...grid,
-        startY: y + 2,
         head,
-        body: sec.rows.map((r) => [r.label, ...row(r.id)]),
+        body: sec.rows.map((r) => [pdfText(r.label), ...row(r.id)]),
         columnStyles: { 0: { cellWidth: sec.sided ? 150 : 250 }, ...numCols },
-      });
+      };
+      // A sheet that won't fit goes to the next page whole (with the heading), instead of splitting.
+      y = title(pdfText(sec.title), room(y, 22 + measure(table), day));
+      lib.autoTable(doc, { ...table, startY: y + 2 });
       y = end() + 20;
     }
 
-    const lines: string[] = doc.splitTextToSize(day.comments || '', W - 2 * M - 12);
-    const issueCount = Math.max(1, day.issues?.length ?? 0);
-    y = title('Comments:', room(y, 22 + Math.max(40, lines.length * 12 + 12) + 14 + LINE + issueCount * 24, day));
-    lib.autoTable(doc, {
+    const comments = {
       ...grid,
-      startY: y + 2,
-      body: [[lines.join('\n') || ' ']],
+      rowPageBreak: 'auto', // one big cell: let long comments run onto the next page
+      body: [[pdfText(day.comments || '') || ' ']],
       styles: { ...grid.styles, fontSize: 10, cellPadding: 6, minCellHeight: 40 },
-    });
+    };
     const issues: Issue[] = day.issues?.length ? day.issues : [{ category: '', comment: '', resolved: '', notified: '' }];
-    lib.autoTable(doc, {
+    const issueTable = {
       ...grid,
-      startY: end() + 14,
       head: [['Category', 'Comment', 'Resolved?', 'Port Engineer Notified']],
-      body: issues.map((x) => [x.category, x.comment, x.resolved, x.notified]),
+      body: issues.map((x) => [pdfText(x.category), pdfText(x.comment), x.resolved, x.notified]),
       styles: { ...grid.styles, minCellHeight: 22 },
       columnStyles: { 0: { cellWidth: 120 }, 2: { cellWidth: 80, halign: 'center' }, 3: { cellWidth: 110, halign: 'center' } },
-    });
+    };
+    y = title('Comments:', room(y, 22 + Math.min(measure(comments), 200) + 14 + Math.min(measure(issueTable), 120), day));
+    lib.autoTable(doc, { ...comments, startY: y + 2 });
+    lib.autoTable(doc, { ...issueTable, startY: end() + 14 });
     for (let p = firstPage; p <= doc.getNumberOfPages(); p++) pageDate[p] = day.date;
   });
 

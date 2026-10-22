@@ -12,8 +12,11 @@ interface Props {
 
 export default function History({ data, chain, onOpen, onPdf }: Props) {
   const dates = data.entries.map((e) => e.date);
-  const [from, setFrom] = useState(dates[0] ?? '');
-  const [to, setTo] = useState(dates[dates.length - 1] ?? '');
+  // Blank until picked, so the range always covers days that arrive later (from the other device).
+  const [pickedFrom, setFrom] = useState('');
+  const [pickedTo, setTo] = useState('');
+  const from = pickedFrom || dates[0] || '';
+  const to = pickedTo || dates[dates.length - 1] || '';
   const inRange = dates.filter((d) => d >= from && d <= to);
   const hasMain = data.settings.sections.some((s) => s.id === 'main' && s.rows.some((r) => r.id === 'totalHours'));
 

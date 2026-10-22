@@ -11,11 +11,11 @@ const page = `<title>Daily Engine Maintenance</title>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Semi+Condensed:wght@500;600;700&display=swap">
 <style>${css}</style>
-<div id="root"></div>
+<div id="root"><div class="boot"><h1>Daily Engine Maintenance</h1><p>Opening the log… If this message stays, the page couldn't finish loading: check your signal and reopen it. Your log is safe.</p></div></div>
 <script src="${cdn}/react/18.3.1/umd/react.production.min.js"></script>
 <script src="${cdn}/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
-<script src="${cdn}/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="${cdn}/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="${cdn}/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
+<script src="${cdn}/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js" defer></script>
 <script>${js}</script>
 `;
 writeFileSync('dist-web/engine-log.html', page);

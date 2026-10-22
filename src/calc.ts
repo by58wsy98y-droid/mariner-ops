@@ -35,8 +35,8 @@ export const DEFAULT_SECTIONS: SectionDef[] = [
     rows: [
       h('gearOH', 'Hours on Gear (Since O/H)'),
       h('strainer', 'Hours on Filter/Strainer'),
-      h('pilotGreased', 'PILOT BRNG (Hours Since Last Greased)'),
-      h('pilotChanged', 'PILOT BRNG (Hours Since Last Changed)'),
+      added('pilotGreased', 'PILOT BRNG (Hours Since Last Greased)'),
+      added('pilotChanged', 'PILOT BRNG (Hours Since Last Changed)'),
       h('lubeChange', 'Hours Since Last Lube Oil Change'),
       added('lubeAdded', 'Lube Oil Added (Since Last Oil Sample)'),
     ],
@@ -61,10 +61,10 @@ export const DEFAULT_SECTIONS: SectionDef[] = [
     rows: [
       h('polisherSvc', 'F/O Centrifuge/Polisher Hours (Since Last Serviced)'),
       h('polisher', 'F/O Centrifuge/Polisher Hours'),
-      h('serviceFilter', 'F/O Service Filter Hours (Since Last Changed)'),
-      h('comp1', 'Air Compressor 1'),
-      h('comp2', 'Air Compressor 2'),
-      h('comp3', 'Air Compressor 3'),
+      added('serviceFilter', 'F/O Service Filter Hours (Since Last Changed)'),
+      added('comp1', 'Air Compressor 1'),
+      added('comp2', 'Air Compressor 2'),
+      added('comp3', 'Air Compressor 3'),
     ],
   },
 ];
@@ -79,14 +79,29 @@ export const DEFAULT_SETTINGS: Settings = {
 
 export const SIDE_LABEL: Record<Side, string> = { port: 'Port', stbd: 'Starboard', one: '' };
 export const sidesOf = (s: SectionDef): Side[] => (s.sided ? ['port', 'stbd'] : ['one']);
+/** Sheets and lines in use (not removed in Setup). */
+export const liveSections = (sections: SectionDef[]) =>
+  sections.filter((s) => !s.removed).map((s) => ({ ...s, rows: s.rows.filter((r) => !r.removed) }));
+/** Anything typed on this day for this counter. */
+export const hasEntry = (day: DayLog, key: string) => {
+  const c = day.cells[key];
+  return !!c && (c.today != null || !!c.reset || c.start != null);
+};
+/** Sheets and lines to show and print for a day: those in use, plus removed ones this day has numbers for. */
+export function sectionsForDay(sections: SectionDef[], day: DayLog): SectionDef[] {
+  const used = (s: SectionDef, r: { id: string }) => sidesOf(s).some((side) => hasEntry(day, cellKey(s.id, r.id, side)));
+  return sections
+    .map((s) => ({ ...s, rows: s.rows.filter((r) => (!r.removed && !s.removed) || used(s, r)) }))
+    .filter((s) => !s.removed || s.rows.length > 0);
+}
 export const cellKey = (sectionId: string, rowId: string, side: Side) => `${sectionId}.${rowId}.${side}`;
 
 export function sectionKeys(sections: SectionDef[]): string[] {
   return sections.flatMap((s) => s.rows.flatMap((r) => sidesOf(s).map((side) => cellKey(s.id, r.id, side))));
 }
 
-/** Money-style rounding to hundredths so 0.1 + 0.2 shows as 0.30. */
-export const round2 = (n: number) => Math.round(n * 100) / 100;
+/** Money-style rounding to hundredths so 0.1 + 0.2 shows as 0.30 (and never "-0.00"). */
+export const round2 = (n: number) => Math.round(n * 100) / 100 + 0;
 
 export function emptyDay(date: string, settings: Settings): DayLog {
   return {
@@ -106,7 +121,7 @@ export function computeDay(day: DayLog, before: Balances, keys: string[]): DayCa
   const cells: DayCalc['cells'] = {};
   for (const key of new Set([...keys, ...Object.keys(day.cells)])) {
     const cell: Cell | undefined = day.cells[key];
-    const prev = cell?.reset ? cell.reset.to : before.counters[key] ?? 0;
+    const prev = cell?.reset ? cell.reset.to : cell?.start ?? before.counters[key] ?? 0;
     const today = cell?.today ?? 0;
     cells[key] = { prev, today, total: round2(prev + today), ...(cell?.reset ? { reset: cell.reset } : {}) };
   }
@@ -114,8 +129,11 @@ export function computeDay(day: DayLog, before: Balances, keys: string[]): DayCa
   for (const { id } of FLUIDS) {
     const f = day.fluids?.[id];
     const begin = before.fluids[id] ?? 0;
-    const used = f?.used ?? 0, purchased = f?.purchased ?? 0, transferred = f?.transferred ?? 0;
-    fluids[id] = { begin, used, purchased, transferred, end: round2(begin - used + purchased - transferred) };
+    const purchased = f?.purchased ?? 0, transferred = f?.transferred ?? 0;
+    fluids[id] =
+      f?.ending != null
+        ? { begin, used: round2(begin + purchased - transferred - f.ending), purchased, transferred, end: f.ending }
+        : { begin, used: f?.used ?? 0, purchased, transferred, end: round2(begin - (f?.used ?? 0) + purchased - transferred) };
   }
   return { date: day.date, cells, fluids };
 }
@@ -130,25 +148,42 @@ export function after(calc: DayCalc, before: Balances): Balances {
   };
 }
 
-/** Every saved day in date order, each starting from the day before (the first from the starting values). */
-export function computeChain(entries: DayLog[], settings: Settings): DayCalc[] {
+const ZERO: Balances = { counters: {}, fluids: { fuel: 0, lube: 0, water: 0 } };
+
+/** The day the starting values belong to: set explicitly, else the earliest saved day. */
+export const startDateOf = (entries: DayLog[], settings: Settings): string | undefined =>
+  settings.start.date ?? [...entries].sort((a, b) => a.date.localeCompare(b.date))[0]?.date;
+
+/**
+ * Walk the saved days in date order. The starting values are the Prev of the start day; each later day
+ * starts from the day before it. Returns each day's numbers and the balances carried past the last one.
+ */
+function walk(entries: DayLog[], settings: Settings, until?: string) {
   const keys = sectionKeys(settings.sections);
+  const startDate = startDateOf(entries, settings) ?? until;
+  const days = [...entries].filter((e) => until == null || e.date < until).sort((a, b) => a.date.localeCompare(b.date));
   const out: DayCalc[] = [];
-  let bal = settings.start;
-  for (const day of [...entries].sort((a, b) => a.date.localeCompare(b.date))) {
+  let bal = ZERO;
+  let started = false;
+  for (const day of days) {
+    if (!started && startDate && day.date >= startDate) {
+      bal = settings.start;
+      started = true;
+    }
     const calc = computeDay(day, bal, keys);
     out.push(calc);
     bal = after(calc, bal);
   }
-  return out;
+  if (!started && until != null && startDate && until >= startDate) bal = settings.start;
+  return { out, bal };
 }
 
+/** Every saved day in date order, each starting from the day before (the start day from the starting values). */
+export const computeChain = (entries: DayLog[], settings: Settings): DayCalc[] => walk(entries, settings).out;
+
 /** Prev values for `date`: the Totals of the latest saved day before it, or the starting values. */
-export function balancesBefore(entries: DayLog[], settings: Settings, date: string): Balances {
-  let bal = settings.start;
-  for (const calc of computeChain(entries.filter((e) => e.date < date), settings)) bal = after(calc, bal);
-  return bal;
-}
+export const balancesBefore = (entries: DayLog[], settings: Settings, date: string): Balances =>
+  walk(entries, settings, date).bal;
 
 /** Typing the Ending balance (from soundings) works out Used. */
 export const usedFromEnding = (begin: number, purchased: number, transferred: number, end: number) =>
@@ -166,27 +201,44 @@ export function setReset(day: DayLog, key: string, reset: Cell['reset'] | undefi
 /** "Port ran 24 hrs": put the hours on every hours line of that side (lube oil added lines are left alone). */
 export function fillHours(day: DayLog, section: SectionDef, side: Side, hours: number): DayLog {
   let d = day;
-  for (const r of section.rows) if (r.kind === 'hours') d = setToday(d, cellKey(section.id, r.id, side), hours);
+  for (const r of section.rows) if (r.kind === 'hours' && !r.removed) d = setToday(d, cellKey(section.id, r.id, side), hours);
   return d;
 }
 
-/** Start a new day from the last one: same hours run, chief, draft & tow, and the issues still open. */
-export function copyFrom(prev: DayLog, date: string, settings: Settings): DayLog {
-  const day = emptyDay(date, settings);
+export function setStartValue(day: DayLog, key: string, start: number | null): DayLog {
+  const { start: _old, ...rest } = day.cells[key] ?? { today: null };
+  return { ...day, cells: { ...day.cells, [key]: start == null ? { ...rest, today: rest.today ?? null } : { ...rest, today: rest.today ?? null, start } } };
+}
+
+/**
+ * Fill a day from the last one: same hours run, chief, draft & tow, and the issues still open.
+ * Anything already typed on `current` stays; only blanks are filled.
+ */
+export function copyFrom(prev: DayLog, date: string, settings: Settings, current?: DayLog): DayLog {
+  const base = current ?? emptyDay(date, settings);
   const hoursKeys = new Set(
-    settings.sections.flatMap((s) =>
+    liveSections(settings.sections).flatMap((s) =>
       s.rows.filter((r) => r.kind === 'hours').flatMap((r) => sidesOf(s).map((side) => cellKey(s.id, r.id, side)))
     )
   );
-  const cells: DayLog['cells'] = {};
-  for (const [key, c] of Object.entries(prev.cells)) if (hoursKeys.has(key) && c.today != null) cells[key] = { today: c.today };
+  const cells: DayLog['cells'] = { ...base.cells };
+  for (const [key, c] of Object.entries(prev.cells))
+    if (hoursKeys.has(key) && c.today != null && cells[key]?.today == null) cells[key] = { ...cells[key], today: c.today };
+  const keep = <T,>(mine: T, theirs: T) => (mine == null || mine === '' ? theirs : mine);
+  const sameIssue = (a: { category: string; comment: string }, b: { category: string; comment: string }) =>
+    a.category === b.category && a.comment === b.comment;
+  const open = prev.issues.filter((i) => i.resolved !== 'Yes' && !base.issues.some((x) => sameIssue(x, i)));
   return {
-    ...day,
-    chief: prev.chief || settings.chief,
-    draftBow: prev.draftBow, draftStern: prev.draftStern, loads: prev.loads, empties: prev.empties,
-    from: prev.from, to: prev.to,
+    ...base,
+    chief: keep(base.chief, prev.chief) || settings.chief,
+    draftBow: keep(base.draftBow, prev.draftBow),
+    draftStern: keep(base.draftStern, prev.draftStern),
+    loads: keep(base.loads, prev.loads),
+    empties: keep(base.empties, prev.empties),
+    from: keep(base.from, prev.from),
+    to: keep(base.to, prev.to),
     cells,
-    issues: prev.issues.filter((i) => i.resolved !== 'Yes').map((i) => ({ ...i })),
+    issues: [...base.issues, ...open.map((i) => ({ ...i }))],
   };
 }
 
