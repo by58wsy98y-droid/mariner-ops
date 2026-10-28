@@ -9,6 +9,7 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+  actions: read
   pages: write
   id-token: write
 concurrency:
@@ -33,5 +34,17 @@ jobs:
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist-site
+      # Until Settings → Pages → Source is "GitHub Actions", GitHub also publishes the raw branch on every
+      # push, and whichever finishes last is what the site shows. Wait for that one so this one lands last.
+      - name: Wait for GitHub's own branch publish to finish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for i in $(seq 1 30); do
+            left=$(gh run list -R "$GITHUB_REPOSITORY" --commit "$GITHUB_SHA" --json name,status \
+              --jq '[.[] | select(.name == "pages build and deployment" and .status != "completed")] | length' || echo 0)
+            [ "$left" = "0" ] && break
+            echo "waiting for the branch publish ($i)"; sleep 10
+          done
       - id: deployment
         uses: actions/deploy-pages@v4
