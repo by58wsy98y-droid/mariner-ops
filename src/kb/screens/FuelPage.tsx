@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  computeFuel, entryFromDetail, fuelSettings, loggedDays, previousDay, tableMax, tanksFrom, truckAlert, type FuelEntry, type Tank,
+  computeFuel, entryFromDetail, fuelSettings, loggedDays, previousDay, tableMax, tanksFrom, truckAlert, type FuelEntry, type LoggedDay, type Tank,
 } from '../fuel';
 import { docHref } from '../Md';
 import { useKb } from '../KbApp';
@@ -22,14 +22,29 @@ export default function FuelPage({ slug }: { slug: string }) {
   const settings = boat ? fuelSettings(files.get(boat.doc.path) ?? '') : { capacity: 0, truck: 7500 };
   const [date, setDate] = useState(today);
   const saved = days.find((d) => d.date === date);
-  const [form, setForm] = useState<Record<string, string>>(() => toForm(saved ? entryFromDetail(saved, date) : null));
+  const [form, setForm] = useState<Record<string, string>>(() => seed(saved));
   const [formDate, setFormDate] = useState(date);
   const [msg, setMsg] = useState('');
-  if (formDate !== date) { // another day picked: load what was saved for it, if anything
+  const drafts = useRef<Record<string, Record<string, string>>>({}); // typed but not saved, per day
+  if (formDate !== date) { // another day picked: keep what was typed, load that day's draft or what was saved for it
+    drafts.current[formDate] = form;
     setFormDate(date);
-    setForm(toForm(saved ? entryFromDetail(saved, date) : null));
+    setForm(drafts.current[date] ?? seed(saved));
     setMsg('');
   }
+  // Left open overnight (a phone keeps the page in the background): move on to the new day, unless something's typed.
+  const shownToday = useRef(today());
+  const untouched = same(form, seed(saved));
+  useEffect(() => {
+    const check = () => {
+      if (document.visibilityState === 'hidden' || today() === shownToday.current) return;
+      if (date === shownToday.current && untouched) setDate(today());
+      shownToday.current = today();
+    };
+    document.addEventListener('visibilitychange', check);
+    window.addEventListener('focus', check);
+    return () => { document.removeEventListener('visibilitychange', check); window.removeEventListener('focus', check); };
+  }, [date, untouched]);
   if (!boat) return <section className="card"><h2>Boat not found</h2><a href="#/">Back</a></section>;
 
   const entry: FuelEntry = {
@@ -42,11 +57,35 @@ export default function FuelPage({ slug }: { slug: string }) {
   const calc = computeFuel(entry, tanks, prev, settings.capacity, settings.truck);
   const alert = truckAlert(calc.room, settings.truck);
   const set = (k: string, v: string) => { setForm({ ...form, [k]: v }); setMsg(''); };
-  const canSave = calc.total != null && !calc.bad.length;
+  // Something typed that isn't a number (90 1/2, 90"): say so rather than leave it out of the total.
+  const unreadable = (k: string) => (form[k] ?? '').trim() !== '' && num(form[k]) == null;
+  const unread = [...tanks.map((t) => t.key), 'received', 'lubeP', 'lubeS', 'lubeReceived', 'water', 'waterReceived'].filter(unreadable);
+  const canSave = calc.total != null && !calc.bad.length && !unread.length;
+  const next = days.find((d) => d.date > date);
 
   const doSave = () => {
-    save({ kind: 'fuel', boat: slug, boatName: boat.name, entry, calc, tankKeys: tanks.map((t) => t.key), truck: settings.truck }, `fuel log ${date}`);
+    save({ kind: 'fuel', boat: slug, boatName: boat.name, entry, calc, tankKeys: tanks.map((t) => t.key), truck: settings.truck, prev }, `fuel log ${date}`);
+    // The next day's "used" compares to this one. In the same month the save does it; across months it's its own change.
+    if (next && next.date.slice(0, 7) !== date.slice(0, 7))
+      save({ kind: 'fuelChain', boat: slug, date: next.date, prev: { date, fuel: calc.total, lube: calc.lubeTotal, water: entry.water } }, `fuel log ${next.date}: used worked out again`);
+    delete drafts.current[date];
     setMsg(`Saved ${date}. It goes into fuel/log-${date.slice(0, 7)}.md and .csv.`);
+  };
+
+  const doDelete = () => {
+    if (!confirm(`Delete the fuel log entry for ${date}?${next ? ` ${next.date}'s "used" will then compare to the day before ${date}.` : ''}`)) return;
+    const rest = days.filter((d) => d.date !== date);
+    save({ kind: 'fuelDelete', boat: slug, date, prev: previousDay(rest, date) }, `delete fuel day ${date}`);
+    if (next && next.date.slice(0, 7) !== date.slice(0, 7))
+      save({ kind: 'fuelChain', boat: slug, date: next.date, prev: previousDay(rest, next.date) }, `fuel log ${next.date}: used worked out again`);
+    delete drafts.current[date];
+    setForm({});
+    setMsg(`Deleted ${date}.`);
+  };
+
+  const pick = (d: string) => {
+    setDate(d);
+    document.getElementById('fuel-date')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   };
 
   const side = (s: 'P' | 'S') => tanks.filter((t) => t.side === s);
@@ -63,7 +102,7 @@ export default function FuelPage({ slug }: { slug: string }) {
             {saved
               ? saved.detail
                 ? 'Already logged: change and save to replace it.'
-                : `Logged in the month table: ${gal(saved.fuel)} gal on hand${saved.used != null ? `, ${gal(saved.used)} used` : ''}. The soundings weren't recorded in the app; enter them to replace that row.`
+                : `Logged in the month table: ${gal(saved.fuel)} gal on hand${saved.used != null ? `, ${gal(saved.used)} used` : ''}. The soundings weren't recorded in the app; enter them to replace that row. Received, water and notes are filled in from it, and its lube total is under Port L/O.`
               : prev ? `Previous: ${prev.date}, ${gal(prev.fuel)} gal` : 'First day for this boat.'}
           </span>
         </div>
@@ -80,7 +119,7 @@ export default function FuelPage({ slug }: { slug: string }) {
             {(['P', 'S'] as const).map((s) => (
               <div key={s} className="tankcol">
                 <div className="sidehead single">{s === 'P' ? 'Port' : 'Starboard'}</div>
-                {side(s).map((t) => <TankInput key={t.key} t={t} value={form[t.key] ?? ''} gallons={calc.gallons[t.key]} bad={calc.bad.includes(t.key)} onChange={(v) => set(t.key, v)} />)}
+                {side(s).map((t) => <TankInput key={t.key} t={t} value={form[t.key] ?? ''} gallons={calc.gallons[t.key]} bad={calc.bad.includes(t.key)} unread={unreadable(t.key)} onChange={(v) => set(t.key, v)} />)}
                 <div className="tanktotal">{s === 'P' ? 'Port' : 'Stbd'} total <b>{gal(s === 'P' ? calc.port : calc.stbd)}</b></div>
               </div>
             ))}
@@ -98,6 +137,7 @@ export default function FuelPage({ slug }: { slug: string }) {
           <Row label="Used" value={gal(calc.used)} warn={calc.used != null && calc.used < 0} />
           <Row label="Room to full" value={gal(calc.room)} />
         </div>
+        {!settings.capacity && <p className="small muted">Set the full capacity under “Alerts for this boat” to see room to full and truck alerts.</p>}
         {calc.used != null && calc.used < 0 && <p className="warnbox">Used is negative: did fuel come aboard? Enter it under Received.</p>}
       </section>
 
@@ -130,15 +170,9 @@ export default function FuelPage({ slug }: { slug: string }) {
       <section className="card">
         <label htmlFor="notes">Notes<textarea id="notes" rows={2} value={form.notes ?? ''} onChange={(e) => set('notes', e.target.value)} placeholder="Fueled before sounding; 3s then 4s" /></label>
         {calc.bad.length > 0 && <p className="warnbox">Past the end of the tank table: {calc.bad.join(', ')}. Check the sounding.</p>}
+        {unread.length > 0 && <p className="warnbox">Can't read {unread.join(', ')}: type plain numbers, e.g. 90.5 for 90½.</p>}
         <button className="big" onClick={doSave} disabled={!canSave}>{saved ? `Save changes to ${date}` : `Save ${date}`}</button>
-        {saved && (
-          <button className="secondary danger-text" onClick={() => {
-            if (!confirm(`Delete the fuel log entry for ${date}? Later days' "used" will then compare to the day before it.`)) return;
-            save({ kind: 'fuelDelete', boat: slug, date }, `delete fuel day ${date}`);
-            setForm({});
-            setMsg(`Deleted ${date}.`);
-          }}>Delete this day</button>
-        )}
+        {saved && <button className="secondary danger-text" onClick={doDelete}>Delete this day</button>}
         {msg && <p className="small" role="status">{msg}</p>}
       </section>
 
@@ -151,7 +185,7 @@ export default function FuelPage({ slug }: { slug: string }) {
             <thead><tr><th>Date</th><th>On hand</th><th>Received</th><th>Used</th><th>Lube</th><th>Water</th><th>Notes</th></tr></thead>
             <tbody>
               {[...days].reverse().map((d) => (
-                <tr key={d.date} onClick={() => setDate(d.date)} className="clickable">
+                <tr key={d.date} onClick={() => pick(d.date)} className={d.date === date ? 'clickable on' : 'clickable'}>
                   <td>{d.date}</td><td>{gal(d.fuel)}</td><td>{gal(d.received)}</td><td>{gal(d.used)}</td><td>{gal(d.lube)}</td><td>{gal(d.water)}</td><td>{d.notes}</td>
                 </tr>
               ))}
@@ -176,6 +210,21 @@ export default function FuelPage({ slug }: { slug: string }) {
   );
 }
 
+/** Two forms hold the same numbers and notes (blank boxes and 1,107 vs 1107 don't count as different). */
+function same(a: Record<string, string>, b: Record<string, string>) {
+  const norm = (f: Record<string, string>) =>
+    JSON.stringify(Object.entries(f).map(([k, v]) => [k, num(v ?? '') ?? (v ?? '').trim()]).filter(([, v]) => v !== '').sort());
+  return norm(a) === norm(b);
+}
+
+/** The form for a day: what was saved, or for a day only in the month table, what that row has. */
+function seed(d: LoggedDay | undefined): Record<string, string> {
+  if (!d) return {};
+  if (d.detail) return toForm(entryFromDetail(d, d.date));
+  const s = (x: number | null | undefined) => (x == null ? '' : String(x));
+  return { received: s(d.received), lubeP: s(d.lube), water: s(d.water), waterReceived: s(d.waterReceived), notes: d.notes };
+}
+
 function toForm(e: FuelEntry | null): Record<string, string> {
   if (!e) return {};
   const s = (x: number | null) => (x == null ? '' : String(x));
@@ -185,12 +234,12 @@ function toForm(e: FuelEntry | null): Record<string, string> {
   };
 }
 
-function TankInput({ t, value, gallons, bad, onChange }: { t: Tank; value: string; gallons: number | null; bad: boolean; onChange: (v: string) => void }) {
+function TankInput({ t, value, gallons, bad, unread, onChange }: { t: Tank; value: string; gallons: number | null; bad: boolean; unread: boolean; onChange: (v: string) => void }) {
   return (
     <label htmlFor={`in-${t.key}`} className="tankrow">
       <span className="tanklabel">{t.label}</span>
-      <input id={`in-${t.key}`} inputMode="decimal" value={value} onChange={(e) => onChange(e.target.value)} className={bad ? 'bad' : ''} aria-label={`${t.side === 'P' ? 'Port' : 'Starboard'} ${t.label} inches`} placeholder='in.' />
-      <span className="tankgal">{bad ? `max ${tableMax(t.table)}"` : gallons == null ? '' : `${gallons.toLocaleString('en-US')} gal`}</span>
+      <input id={`in-${t.key}`} inputMode="decimal" value={value} onChange={(e) => onChange(e.target.value)} className={bad || unread ? 'bad' : ''} aria-label={`${t.side === 'P' ? 'Port' : 'Starboard'} ${t.label} inches`} placeholder='in.' />
+      <span className="tankgal">{unread ? "can't read" : bad ? `max ${tableMax(t.table)}"` : gallons == null ? '' : `${gallons.toLocaleString('en-US')} gal`}</span>
     </label>
   );
 }
@@ -203,19 +252,22 @@ function FuelSettings({ slug, capacity, truck, boatPath }: { slug: string; capac
   const { save } = useKb();
   const [cap, setCap] = useState(String(capacity || ''));
   const [tr, setTr] = useState(String(truck || ''));
-  const changed = String(capacity || '') !== cap || String(truck || '') !== tr;
+  const [msg, setMsg] = useState('');
+  const changed = num(cap) !== capacity || num(tr) !== truck;
   return (
     <section className="card">
       <h2>Alerts for this boat</h2>
       <p className="small muted">Room for 1 truck when on hand is at or below capacity − 1 load; room for 2 at capacity − 2 loads. Saved in boat.md.</p>
       <div className="grid2">
-        <label htmlFor={`cap-${slug}`}>Full capacity (gal)<input id={`cap-${slug}`} inputMode="numeric" value={cap} onChange={(e) => setCap(e.target.value)} /></label>
-        <label htmlFor={`truck-${slug}`}>Truck load (gal)<input id={`truck-${slug}`} inputMode="numeric" value={tr} onChange={(e) => setTr(e.target.value)} /></label>
+        <label htmlFor={`cap-${slug}`}>Full capacity (gal)<input id={`cap-${slug}`} inputMode="numeric" value={cap} onChange={(e) => { setCap(e.target.value); setMsg(''); }} /></label>
+        <label htmlFor={`truck-${slug}`}>Truck load (gal)<input id={`truck-${slug}`} inputMode="numeric" value={tr} onChange={(e) => { setTr(e.target.value); setMsg(''); }} /></label>
       </div>
       <button className="secondary" disabled={!changed || !num(cap) || !num(tr)} onClick={() => {
         if (num(cap) !== capacity) save({ kind: 'field', path: boatPath, key: 'fuel_capacity_gal', value: String(num(cap)) }, `fuel capacity ${num(cap)}`);
         if (num(tr) !== truck) save({ kind: 'field', path: boatPath, key: 'truck_load_gal', value: String(num(tr)) }, `truck load ${num(tr)}`);
+        setMsg(`Saved: alerts use ${gal(num(cap))} gal full and ${gal(num(tr))} gal trucks.`);
       }}>Save alert settings</button>
+      {msg && <p className="small" role="status">{msg}</p>}
     </section>
   );
 }

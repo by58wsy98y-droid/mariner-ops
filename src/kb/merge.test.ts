@@ -27,9 +27,14 @@ describe('merging an edit with changes made elsewhere', () => {
     expect(m).toContain('phone version');
     expect(m).not.toContain('laptop version');
   });
-  it('both added rows at the end: both kept, this device first', () => {
+  it("both added rows at the end: both kept, the other device's first", () => {
     const local = base + '\n| p | p |';
     const remote = base + '\n| l | l |';
-    expect(merge3(base, local, remote).endsWith('| p | p |')).toBe(true);
+    expect(merge3(base, local, remote)).toBe(base + '\n| l | l |\n| p | p |');
+  });
+  it('the same row added on both sides is kept once', () => {
+    const local = base.replace('line one', 'line ONE') + '\n| x | x |';
+    const remote = base + '\n| x | x |';
+    expect(merge3(base, local, remote)).toBe(local);
   });
 });

@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 import { boatName, similarIssues, statusWord, TYPE_LABEL } from '../corpus';
 import { STATUSES } from '../edits';
 import { fmText } from '../frontmatter';
-import Md from '../Md';
+import Md, { fileHref } from '../Md';
 import { go, useKb } from '../KbApp';
 import { DocRow, StatusPill, nowStamp } from './parts';
 
@@ -41,7 +41,8 @@ export default function DocPage({ path }: { path: string }) {
             {doc.tags.length > 0 && <span className="chips">{doc.tags.map((t) => <span key={t} className="chip">{t}</span>)}</span>}
           </div>
         )}
-        {doc.type === 'issue' && <IssueActions path={doc.path} status={doc.status} />}
+        {doc.type !== 'issue' && doc.type !== 'boat' && <Details fm={doc.fm} />}
+        {doc.type === 'issue' && <IssueActions key={doc.path} path={doc.path} status={doc.status} />}
         <Md c={c} from={doc.path} blocks={blocks} />
         <div className="actions no-print">
           <a className="button secondary" href={`#/edit/${encodeURI(doc.path)}`}>Edit</a>
@@ -75,13 +76,32 @@ export default function DocPage({ path }: { path: string }) {
   );
 }
 
+/** The file's other details (applies to, source, printables…), with document paths as links. */
+function Details({ fm }: { fm: Record<string, string | string[]> }) {
+  const rows = Object.entries(fm).filter(([k, v]) => !['title', 'boat', 'tags'].includes(k) && fmText(v).trim());
+  if (!rows.length) return null;
+  const linked = (text: string) =>
+    text.split(/(\/?docs\/[^\s,()]+)/).map((part, i) =>
+      i % 2 && !part.includes('*') ? <a key={i} href={fileHref(part.replace(/^\//, ''))} target="_blank" rel="noreferrer">{part}</a> : <Fragment key={i}>{part}</Fragment>);
+  return (
+    <dl className="fm-details">
+      {rows.map(([k, v]) => (
+        <div key={k}><dt>{k.replace(/_/g, ' ')}</dt><dd>{linked(fmText(v))}</dd></div>
+      ))}
+    </dl>
+  );
+}
+
+/** "OPEN — needs diver" → "needs diver" */
+const statusNote = (status?: string) => (status ?? '').replace(/^\s*[A-Za-z]+\s*(?:—|–|-|:)?\s*/, '');
+
 function IssueActions({ path, status }: { path: string; status?: string }) {
   const { save } = useKb();
   const [open, setOpen] = useState<'timeline' | 'status' | null>(null);
   const [when, setWhen] = useState(nowStamp);
   const [what, setWhat] = useState('');
   const [word, setWord] = useState<string>(statusWord(status));
-  const [note, setNote] = useState('');
+  const [note, setNote] = useState(() => statusNote(status));
   const [msg, setMsg] = useState('');
 
   const addRow = () => {
@@ -102,7 +122,7 @@ function IssueActions({ path, status }: { path: string; status?: string }) {
   return (
     <div className="issue-actions no-print">
       <div className="actions">
-        <button onClick={() => { setOpen(open === 'timeline' ? null : 'timeline'); setMsg(''); }}>+ Add to timeline</button>
+        <button onClick={() => { if (open !== 'timeline') setWhen(nowStamp()); setOpen(open === 'timeline' ? null : 'timeline'); setMsg(''); }}>+ Add to timeline</button>
         <button className="secondary" onClick={() => { setOpen(open === 'status' ? null : 'status'); setMsg(''); }}>Change status</button>
       </div>
       {msg && <p className="small" role="status">{msg}</p>}
@@ -125,7 +145,7 @@ function IssueActions({ path, status }: { path: string; status?: string }) {
               {STATUSES.map((s) => <option key={s}>{s}</option>)}
             </select>
           </label>
-          <label htmlFor="st-note">Note (optional)<input id="st-note" value={note} onChange={(e) => setNote(e.target.value)} placeholder="needs diver; reported to port engineer" /></label>
+          <label htmlFor="st-note">Note (optional)<input id="st-note" value={note} onChange={(e) => setNote(e.target.value)} placeholder="e.g. waiting on parts" /></label>
           <div className="actions">
             <button onClick={setStatusNow}>Set status</button>
             <button className="secondary" onClick={() => setOpen(null)}>Cancel</button>

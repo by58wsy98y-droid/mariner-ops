@@ -7,28 +7,31 @@
 import { parseFrontmatter, fmText } from './frontmatter';
 import { splitRow } from './markdown';
 
-export type Table = Map<number, number>; // whole inch -> gallons
+export type Table = Map<number, number>; // inches -> gallons, in order of inches
 
 export function parseTankCsv(text: string): Table {
-  const t: Table = new Map();
+  const rows: [number, number][] = [];
   for (const line of text.split(/\r?\n/).slice(1)) {
     const [i, g] = line.split(',').map((s) => s.trim());
-    if (i !== '' && g !== undefined && !isNaN(+i) && !isNaN(+g)) t.set(Math.round(+i), +g);
+    if (i !== '' && g !== undefined && g !== '' && !isNaN(+i) && !isNaN(+g)) rows.push([+i, +g]);
   }
-  return t;
+  return new Map(rows.sort((a, b) => a[0] - b[0]));
 }
 
 export const tableMax = (t: Table) => Math.max(...t.keys());
 
-/** Gallons at a sounding. null = past the end of the table (or not a number). */
+/** Gallons at a sounding, worked out between the table lines. null = outside the table (or not a number). */
 export function lookup(t: Table, inches: number): number | null {
-  if (!Number.isFinite(inches) || inches < 0) return null;
-  const lo = Math.floor(inches);
-  const g = t.get(lo);
-  if (g === undefined) return null;
-  const hi = t.get(lo + 1);
-  if (inches === lo || hi === undefined) return Math.round(g);
-  return Math.round(g + (inches - lo) * (hi - g));
+  if (!Number.isFinite(inches) || !t.size) return null;
+  let below: [number, number] | null = null;
+  for (const [i, g] of t) {
+    if (i === inches) return Math.round(g);
+    if (i < inches) { below = [i, g]; continue; }
+    if (!below) return null; // under the first line
+    return Math.round(below[1] + ((inches - below[0]) / (i - below[0])) * (g - below[1]));
+  }
+  // Past the last line: within its last inch the workbook uses that line, beyond is off the table.
+  return below && inches < Math.floor(below[0]) + 1 ? Math.round(below[1]) : null;
 }
 
 /** Tanks on a boat, from fuel/tank-tables/tank-<id>.csv. "tank-2.csv" serves #2 port and starboard; "tank-2p.csv" only port. */
@@ -94,13 +97,23 @@ export function computeFuel(e: FuelEntry, tanks: Tank[], prev: Prev | null, capa
   const port = sum(tanks.filter((t) => t.side === 'P').map((t) => gallons[t.key]));
   const stbd = sum(tanks.filter((t) => t.side === 'S').map((t) => gallons[t.key]));
   const total = sum([port, stbd]);
-  const used = total != null && prev?.fuel != null ? prev.fuel + (e.received ?? 0) - total : null;
-  const room = total != null ? capacity - total : null;
+  const room = total != null && capacity > 0 ? capacity - total : null; // no capacity set: no room, no alerts
   const trucks = room != null && truck > 0 ? Math.max(0, Math.floor(room / truck)) : null;
   const lubeTotal = sum([e.lubeP, e.lubeS]);
-  const lubeUsed = lubeTotal != null && prev?.lube != null ? prev.lube + (e.lubeReceived ?? 0) - lubeTotal : null;
-  const waterUsed = e.water != null && prev?.water != null ? prev.water + (e.waterReceived ?? 0) - e.water : null;
-  return { gallons, bad, port, stbd, total, used, room, trucks, lubeTotal, lubeUsed, waterUsed };
+  const u = usedFrom(prev, { fuel: total, received: e.received, lube: lubeTotal, lubeReceived: e.lubeReceived, water: e.water, waterReceived: e.waterReceived });
+  return { gallons, bad, port, stbd, total, room, trucks, lubeTotal, ...u };
+}
+
+/** The day's numbers the "used" figures come from. */
+export interface DayTotals { fuel: number | null; received: number | null; lube: number | null; lubeReceived: number | null; water: number | null; waterReceived: number | null }
+
+/** Used = yesterday + received - today, for fuel, lube and water. */
+export function usedFrom(prev: Prev | null, d: DayTotals): { used: number | null; lubeUsed: number | null; waterUsed: number | null } {
+  return {
+    used: d.fuel != null && prev?.fuel != null ? prev.fuel + (d.received ?? 0) - d.fuel : null,
+    lubeUsed: d.lube != null && prev?.lube != null ? prev.lube + (d.lubeReceived ?? 0) - d.lube : null,
+    waterUsed: d.water != null && prev?.water != null ? prev.water + (d.waterReceived ?? 0) - d.water : null,
+  };
 }
 
 /** Truck-load alert: loads come as 1 or 2 trucks, nothing in between. */
@@ -152,7 +165,27 @@ export function parseCsv(text: string): string[][] {
 const fmtGal = (x: number | null) => (x == null ? '—' : Math.round(x).toLocaleString('en-US'));
 
 /** Days already logged for a boat (both file kinds), oldest first. */
-export interface LoggedDay { date: string; fuel: number | null; lube: number | null; water: number | null; received: number | null; used: number | null; notes: string; detail?: Record<string, string> }
+export interface LoggedDay {
+  date: string; fuel: number | null; lube: number | null; water: number | null; received: number | null; used: number | null; notes: string;
+  waterReceived?: number | null; // month-table days: from "(+6,000 rec'd)" in the water cell
+  detail?: Record<string, string>; // CSV days: every column
+}
+
+const recd = (waterCell: string | undefined) => { const m = /\+\s*([\d,]+)\s*rec/i.exec(waterCell ?? ''); return m ? +m[1].replace(/,/g, '') : null; };
+
+/** Where the month table is in a fuel/log-YYYY-MM.md file, and which column is which. */
+function mdTable(text: string) {
+  const lines = text.split('\n');
+  const h = lines.findIndex((l) => /^\|\s*Date\s*\|/i.test(l));
+  if (h < 0) return null;
+  let end = h + 2;
+  while (end < lines.length && lines[end].trim().startsWith('|')) end++;
+  const head = splitRow(lines[h]).map((s) => s.toLowerCase());
+  const col = (re: RegExp) => head.findIndex((x) => re.test(x));
+  const [date, fuel, received, used, lube, water, notes] = [/^date/, /total fuel|fuel/, /received/, /used/, /lube/, /water/, /notes/].map(col);
+  return { lines, h, end, cols: { date, fuel, received, used, lube, water, notes } };
+}
+const rowKey = (l: string) => { const m = /^\|\s*(\d{1,2})\/(\d{1,2})/.exec(l); return m ? `${m[1].padStart(2, '0')}/${m[2].padStart(2, '0')}` : ''; };
 
 export function loggedDays(files: Map<string, string>, boat: string): LoggedDay[] {
   const days = new Map<string, LoggedDay>();
@@ -161,20 +194,16 @@ export function loggedDays(files: Map<string, string>, boat: string): LoggedDay[
     const m = /^log-(\d{4})-(\d{2})\.(md|csv)$/.exec(path.startsWith(dir) ? path.slice(dir.length) : '');
     if (!m) continue;
     if (m[3] === 'md') {
-      const { body } = parseFrontmatter(text);
-      const lines = body.split('\n');
-      const h = lines.findIndex((l) => /^\|\s*Date\s*\|/i.test(l));
-      if (h < 0) continue;
-      const head = splitRow(lines[h]).map((s) => s.toLowerCase());
-      const col = (re: RegExp) => head.findIndex((x) => re.test(x));
-      const [cd, cf, cr, cu, cl, cw, cn] = [/^date/, /total fuel|fuel/, /received/, /used/, /lube/, /water/, /notes/].map(col);
-      for (const l of lines.slice(h + 2)) {
-        if (!l.trim().startsWith('|')) break;
+      const t = mdTable(parseFrontmatter(text).body);
+      if (!t) continue;
+      const k = t.cols;
+      for (const l of t.lines.slice(t.h + 2, t.end)) {
         const c = splitRow(l);
-        const md = /^(\d{1,2})\/(\d{1,2})/.exec(c[cd] ?? '');
+        const md = /^(\d{1,2})\/(\d{1,2})/.exec(c[k.date] ?? '');
         if (!md) continue;
         const date = `${m[1]}-${md[1].padStart(2, '0')}-${md[2].padStart(2, '0')}`;
-        if (!days.has(date)) days.set(date, { date, fuel: n(c[cf]), lube: n(c[cl]), water: n(c[cw]), received: n(c[cr]), used: n(c[cu]), notes: c[cn] ?? '' });
+        if (!days.has(date))
+          days.set(date, { date, fuel: n(c[k.fuel]), lube: n(c[k.lube]), water: n(c[k.water]), received: n(c[k.received]), used: n(c[k.used]), notes: c[k.notes] ?? '', waterReceived: recd(c[k.water]) });
       }
     } else {
       const rows = parseCsv(text);
@@ -205,8 +234,7 @@ const cellText = (s: string) => s.replace(/\|/g, '/').replace(/\s+/g, ' ').trim(
 /** The month's summary table with this day added or replaced. Rows stay in date order; everything else in the file is kept. */
 export function upsertFuelMd(text: string | null, boatName: string, e: FuelEntry, c: FuelCalc): string {
   const month = e.date.slice(0, 7);
-  const extras = [e.waterReceived ? `+${fmtGal(e.waterReceived)} rec'd` : '', c.waterUsed != null ? `${fmtGal(c.waterUsed)} used` : ''].filter(Boolean);
-  const water = e.water == null ? '—' : fmtGal(e.water) + (extras.length ? ` (${extras.join(', ')})` : '');
+  const water = waterCell(e.water, e.waterReceived, c.waterUsed);
   const row = `| ${mmdd(e.date)} | ${fmtGal(c.total)} | ${e.received ? fmtGal(e.received) : '—'} | ${fmtGal(c.used)} | ${fmtGal(c.lubeTotal)} | ${water} | ${cellText(e.notes)} |`;
   const doc = text ?? `---\nboat: ${boatName}\nmonth: ${month}\n---\n\n# Fuel log notes — ${new Date(+month.slice(0, 4), +month.slice(5, 7) - 1, 1).toLocaleString('en-US', { month: 'long', year: 'numeric' })}\n\n| Date | Total fuel (gal) | Received | Used | Lube total | Water | Notes |\n|---|---|---|---|---|---|---|\n`;
   const lines = doc.split('\n');
@@ -280,4 +308,41 @@ export function removeFuelCsv(text: string, date: string): string {
   const rows = parseCsv(text);
   if (!rows.length) return text;
   return [rows[0], ...rows.slice(1).filter((r) => r[0] !== date)].map((r) => r.map(csvCell).join(',')).join('\n') + '\n';
+}
+
+// ---------- keeping "used" right when an earlier day is added, corrected or deleted ----------
+
+const waterCell = (water: number | null, received: number | null, used: number | null) => {
+  const extras = [received ? `+${fmtGal(received)} rec'd` : '', used != null ? `${fmtGal(used)} used` : ''].filter(Boolean);
+  return water == null ? '—' : fmtGal(water) + (extras.length ? ` (${extras.join(', ')})` : '');
+};
+
+/** The month table with one day's Used (and water used) worked out again against `prev`. */
+export function rechainFuelMd(text: string, date: string, prev: Prev | null): string {
+  const t = mdTable(text);
+  if (!t) return text;
+  const at = t.lines.findIndex((l, i) => i >= t.h + 2 && i < t.end && rowKey(l) === mmdd(date));
+  if (at < 0) return text;
+  const k = t.cols;
+  const c = splitRow(t.lines[at]);
+  const u = usedFrom(prev, { fuel: n(c[k.fuel]), received: n(c[k.received]), lube: null, lubeReceived: null, water: n(c[k.water]), waterReceived: recd(c[k.water]) });
+  if (k.used >= 0) c[k.used] = fmtGal(u.used);
+  if (k.water >= 0) c[k.water] = waterCell(n(c[k.water]), recd(c[k.water]), u.waterUsed);
+  t.lines[at] = `| ${c.map((x) => x.replace(/\|/g, '\\|')).join(' | ')} |`;
+  return t.lines.join('\n');
+}
+
+/** The CSV with one day's fuel, lube and water used worked out again against `prev`. */
+export function rechainFuelCsv(text: string, date: string, prev: Prev | null): string {
+  const rows = parseCsv(text);
+  const head = rows[0] ?? [];
+  const r = rows.find((x, i) => i > 0 && x[0] === date);
+  if (!r) return text;
+  const get = (k: string) => { const i = head.indexOf(k); return i < 0 || r[i] === '' || r[i] === undefined ? null : +r[i]; };
+  const u = usedFrom(prev, {
+    fuel: get('total_fuel'), received: get('fuel_received'), lube: get('lube_total'), lubeReceived: get('lube_received'), water: get('water'), waterReceived: get('water_received'),
+  });
+  const put = (k: string, v: number | null) => { const i = head.indexOf(k); if (i >= 0) r[i] = v == null ? '' : String(v); };
+  put('fuel_used', u.used); put('lube_used', u.lubeUsed); put('water_used', u.waterUsed);
+  return rows.map((x) => x.map(csvCell).join(',')).join('\n') + '\n';
 }

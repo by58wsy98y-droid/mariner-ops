@@ -1,6 +1,7 @@
 // Edit any text file: the details at the top of a page as boxes, the rest as one big text box.
 import { useState } from 'react';
 import { parseFrontmatter, setFrontmatterField } from '../frontmatter';
+import { docType } from '../corpus';
 import { docHref } from '../Md';
 import { go, useKb } from '../KbApp';
 
@@ -42,12 +43,14 @@ export default function EditFile({ path }: { path: string }) {
   };
   const next = build();
   const changed = next !== original;
-  const back = () => go(isMd ? docHref(path) : '#/files');
+  // pages open as pages; anything else (READMEs, templates, CSVs) goes back to the file list
+  const home = docType(path) ? docHref(path) : '#/files';
+  const back = () => go(home);
 
   return (
     <div className="screen">
       <section className="card">
-        <div className="crumbs"><a href={isMd ? docHref(path) : '#/files'}>{path}</a> · Edit</div>
+        <div className="crumbs"><a href={home}>{path}</a> · Edit</div>
         <h2 className="page-title">Edit</h2>
         {fields.length > 0 && (
           <div className="form">

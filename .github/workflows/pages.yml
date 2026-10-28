@@ -1,9 +1,11 @@
-# Publishes the engine log to GitHub Pages every time main or fuel-log-app changes.
+# Publishes the engine log and the knowledge base to GitHub Pages every time fuel-log-app changes.
+# One branch only: the knowledge base app saves its edits to the branch the site was built from, so two
+# publishing branches would split the files between them. (If the work moves to main, change it here.)
 # Needs Settings → Pages → Source: GitHub Actions.
 name: Publish engine log site
 on:
   push:
-    branches: [main, fuel-log-app]
+    branches: [fuel-log-app]
   workflow_dispatch:
 permissions:
   contents: read

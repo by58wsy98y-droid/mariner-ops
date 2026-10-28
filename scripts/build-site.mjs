@@ -4,7 +4,7 @@
 //  2. writes an offline helper (sw.js) for each app, keeping a copy of exactly the files that app needs.
 import { createHash } from 'node:crypto';
 import { execSync } from 'node:child_process';
-import { cpSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
+import { cpSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 
 const DIR = 'dist-site';
@@ -20,7 +20,7 @@ const walk = (d, out = []) => {
 const repoFull = process.env.GITHUB_REPOSITORY || (/github\.com[:/](.+?)(\.git)?$/.exec(sh('git remote get-url origin'))?.[1] ?? 'owner/repo');
 const [owner, repo] = repoFull.split('/');
 const branch = process.env.GITHUB_REF_NAME || sh('git rev-parse --abbrev-ref HEAD') || 'main';
-const builtAt = sh('git log -1 --format=%cI') || new Date().toISOString();
+const builtAt = new Date(sh('git log -1 --format=%cI') || Date.now()).toISOString(); // in UTC, like GitHub's own times
 const files = [], docs = [];
 for (const p of walk(KB_SRC)) {
   const rel = posix(relative(KB_SRC, p));
@@ -68,7 +68,8 @@ self.addEventListener('install', (e) => {
 self.addEventListener('activate', (e) => {
   e.waitUntil(
     caches.keys()
-      .then((keys) => Promise.all(keys.filter((k) => k.startsWith('${name}-') && k !== CACHE).map((k) => caches.delete(k))))
+      // old versions go; the kept documents (RUNTIME) stay
+      .then((keys) => Promise.all(keys.filter((k) => k.startsWith('${name}-') && k !== CACHE && k !== RUNTIME?.cache).map((k) => caches.delete(k))))
       .then(() => self.clients.claim())
   );
 });
@@ -80,21 +81,28 @@ self.addEventListener('fetch', (e) => {
   if (url.host === 'fonts.googleapis.com' || url.host === 'fonts.gstatic.com') {
     e.respondWith(caches.open(FONTS).then((c) => c.match(req).then((hit) => {
       const fresh = fetch(req).then((res) => { if (res.ok || res.type === 'opaque') c.put(req, res.clone()); return res; }).catch(() => hit);
-      return hit || fresh;
+      e.waitUntil(fresh.catch(() => {}));
+      // Not kept yet and the signal hangs: give up after 3 s so the page isn't held up by its fonts.
+      return hit || Promise.race([fresh, new Promise((r) => setTimeout(() => r(Response.error()), 3000))]);
     })));
     return;
   }
   if (url.origin !== self.location.origin) return;
+  // Documents (opened as a page or fetched): kept the first time they're opened; the kept copy is shown and
+  // refreshed in the background, so a document replaced under the same name updates on the next open.
+  if (RUNTIME && url.pathname.startsWith(SCOPE + RUNTIME.prefix)) {
+    e.respondWith(caches.open(RUNTIME.cache).then((c) => c.match(req, { ignoreSearch: true }).then((hit) => {
+      const net = fetch(req).then((res) => { if (res.ok) c.put(req, res.clone()); return res; });
+      if (hit) { e.waitUntil(net.catch(() => {})); return hit; }
+      return net;
+    })));
+    return;
+  }
   // This app's own page: always the kept copy, so it opens at once on one bar of signal (updates show next open).
   // Pages that belong to another app on the same site are left alone.
   if (req.mode === 'navigate') {
     if (url.pathname !== SCOPE && url.pathname !== SCOPE + 'index.html') return;
     e.respondWith(caches.open(CACHE).then((c) => c.match('./')).then((r) => r || fetch(req)));
-    return;
-  }
-  // Documents: kept the first time they're opened.
-  if (RUNTIME && url.pathname.startsWith(SCOPE + RUNTIME.prefix)) {
-    e.respondWith(caches.open(RUNTIME.cache).then((c) => c.match(req).then((hit) => hit || fetch(req).then((res) => { if (res.ok) c.put(req, res.clone()); return res; }))));
     return;
   }
   e.respondWith(caches.open(CACHE).then((c) => c.match(req, { ignoreSearch: true })).then((hit) => hit || fetch(req)));
@@ -106,4 +114,17 @@ const root = ['./', 'index.html', ...closure('index.html'), 'manifest.webmanifes
 writeFileSync(join(DIR, 'sw.js'), serviceWorker({ name: 'engine-log', files: root }));
 const kbFiles = ['./', 'index.html', ...closure('kb/index.html'), 'kb-data.json', 'manifest.webmanifest', 'icon.svg', 'icon-192.png', 'icon-512.png'];
 writeFileSync(join(DIR, 'kb', 'sw.js'), serviceWorker({ name: 'kb', files: kbFiles, runtime: { prefix: 'files/', cache: 'kb-files' } }));
+// Phones still running an early engine-log helper get its page at /kb/ too; that page then asks for its script
+// here. Answer with a small script that updates that helper (the new one leaves /kb/ alone) and reloads.
+mkdirSync(join(DIR, 'kb', 'assets'), { recursive: true });
+writeFileSync(join(DIR, 'kb', 'assets', 'index-DQUD1dTX.js'), `(async () => {
+  try {
+    const r = await navigator.serviceWorker.getRegistration('../');
+    await r?.update();
+    const w = r?.installing || r?.waiting;
+    if (w) await new Promise((ok) => { const f = () => w.state === 'activated' && ok(); w.addEventListener('statechange', f); f(); setTimeout(ok, 8000); });
+  } catch {}
+  if (!sessionStorage.getItem('kb-recover')) { sessionStorage.setItem('kb-recover', '1'); location.reload(); }
+})();
+`);
 console.log(`engine log: keeps ${root.length} files · knowledge base: keeps ${kbFiles.length} files, ${files.length} text files, ${docs.length} documents (${branch} @ ${builtAt})`);

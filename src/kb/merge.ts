@@ -30,10 +30,14 @@ export function merge3(base: string, local: string, remote: string): string {
   const b = base.split('\n');
   const A = hunks(b, local.split('\n'));
   const B = hunks(b, remote.split('\n'));
-  const overlaps = (x: Hunk, y: Hunk) => (x.start < y.end && y.start < x.end) || (x.start === y.start && (x.start === x.end || y.start === y.end));
-  // Keep remote hunks that don't clash with any local one.
-  const keepB = B.filter((y) => !A.some((x) => overlaps(x, y)));
-  const all = [...A.map((h) => ({ ...h, side: 0 })), ...keepB.map((h) => ({ ...h, side: 1 }))].sort((x, y) => x.start - y.start || x.side - y.side);
+  // Two additions at the same spot (both added a row at the end) don't clash: both are kept.
+  const added = (h: Hunk) => h.start === h.end;
+  const overlaps = (x: Hunk, y: Hunk) => (x.start < y.end && y.start < x.end) || (x.start === y.start && added(x) !== added(y));
+  const same = (x: Hunk, y: Hunk) => x.start === y.start && x.end === y.end && x.lines.join('\n') === y.lines.join('\n');
+  // Keep remote hunks that don't clash with any local one (and aren't the very same change).
+  const keepB = B.filter((y) => !A.some((x) => overlaps(x, y) || same(x, y)));
+  // At the same spot the other side's additions go first: they were saved earlier.
+  const all = [...A.map((h) => ({ ...h, side: 0 })), ...keepB.map((h) => ({ ...h, side: 1 }))].sort((x, y) => x.start - y.start || y.side - x.side);
   const out: string[] = [];
   let pos = 0;
   for (const h of all) {

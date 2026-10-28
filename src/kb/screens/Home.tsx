@@ -6,13 +6,15 @@ import { DocRow } from './parts';
 
 const ORDER: DocType[] = ['issue', 'system', 'procedure', 'knowledge', 'boat', 'fuel'];
 const SAVED = 'kb:lastSearch';
+const SAVED_TAGS = 'kb:lastTags';
 
 export default function Home() {
   const { corpus: c, index } = useKb();
   const [q, setQ] = useState(() => { try { return sessionStorage.getItem(SAVED) ?? ''; } catch { return ''; } });
-  const [tags, setTags] = useState<string[]>([]);
+  const [tags, setTags] = useState<string[]>(() => { try { return JSON.parse(sessionStorage.getItem(SAVED_TAGS) ?? '[]'); } catch { return []; } });
   const [allTags, setAllTags] = useState(false);
   useEffect(() => { try { sessionStorage.setItem(SAVED, q); } catch { /* fine */ } }, [q]);
+  useEffect(() => { try { sessionStorage.setItem(SAVED_TAGS, JSON.stringify(tags)); } catch { /* fine */ } }, [tags]);
 
   const searching = q.trim() || tags.length;
   const hits = searching ? search(index, q, tags) : [];

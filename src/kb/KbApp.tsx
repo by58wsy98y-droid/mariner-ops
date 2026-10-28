@@ -41,8 +41,16 @@ function useRoute(): string[] {
 
 function useOffline(): Kb['offline'] {
   const sw = typeof navigator !== 'undefined' ? navigator.serviceWorker : undefined;
-  const [state, setState] = useState<Kb['offline']>(sw ? (sw.controller ? 'ready' : 'preparing') : 'none');
-  useEffect(() => { sw?.ready.then(() => setState('ready')).catch(() => {}); }, [sw]);
+  // Only this app's own helper counts (the engine log's, one folder up, can be in charge until it's installed).
+  const mine = () => sw?.controller?.scriptURL === new URL('sw.js', location.href).href;
+  const [state, setState] = useState<Kb['offline']>(sw ? (mine() ? 'ready' : 'preparing') : 'none');
+  useEffect(() => {
+    const on = () => { if (mine()) setState('ready'); };
+    on(); // it may have taken over before this screen was up
+    sw?.addEventListener('controllerchange', on);
+    sw?.ready.then(on).catch(() => {});
+    return () => sw?.removeEventListener('controllerchange', on);
+  }, [sw]);
   return state;
 }
 
@@ -66,7 +74,7 @@ export default function KbApp({ store, docsList }: { store: KbStore; docsList: D
   const [screen, a, ...rest] = route;
   let page;
   if (screen === 'boat' && a) page = <BoatPage slug={a} />;
-  else if (screen === 'doc' && a) page = <DocPage path={[a, ...rest].join('/')} />;
+  else if (screen === 'doc' && a) page = <DocPage key={[a, ...rest].join('/')} path={[a, ...rest].join('/')} />;
   else if (screen === 'fuel' && a) page = <FuelPage slug={a} />;
   else if (screen === 'new-issue' && a) page = <NewIssue slug={a} />;
   else if (screen === 'new-boat') page = <NewBoat />;

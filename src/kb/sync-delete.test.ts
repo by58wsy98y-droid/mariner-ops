@@ -15,6 +15,7 @@ function fakeGitHub(files: Record<string, string>) {
   const api = vi.fn(async (url: string, init?: RequestInit) => {
     const method = init?.method ?? 'GET';
     const body = init?.body ? JSON.parse(String(init.body)) : {};
+    if (url.includes('/branches/')) return ok({ name: 'b' });
     const git = /\/git\/(.*)$/.exec(url)?.[1];
     if (git) {
       if (git.startsWith('ref/heads/')) return ok({ object: { sha: 'c0' } });

@@ -12,7 +12,8 @@ import {
 } from './fuel';
 import { KbStore, fuelPaths } from './sync';
 
-const ROOT = join(__dirname, '../../towboat-kb');
+// A frozen copy of the knowledge base as first uploaded, so editing the real files never breaks the tests.
+const ROOT = join(__dirname, '__fixtures__/towboat-kb');
 function readKb(): KbFile[] {
   const out: KbFile[] = [];
   const walk = (d: string) => {
@@ -201,6 +202,7 @@ describe('saving back to GitHub', () => {
     const state = { offline: false, puts: 0, conflictOnce: false };
     const api = vi.fn(async (url: string, init?: RequestInit) => {
       if (state.offline) throw new TypeError('Failed to fetch');
+      if (url.includes('/branches/')) return new Response('{}', { status: 200 });
       const path = decodeURIComponent(url.replace(/^.*\/contents\//, '').replace(/\?.*$/, ''));
       if (!init?.method || init.method === 'GET') {
         if (!repo.has(path)) return new Response('', { status: 404 });

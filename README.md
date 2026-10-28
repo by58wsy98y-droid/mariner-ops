@@ -29,7 +29,7 @@ device and sent when signal returns (the line under the boat name says which). B
 
 ## Own-site version (GitHub Pages)
 The same app also runs as its own website: **https://by58wsy98y-droid.github.io/mariner-ops/**
-It's published by `.github/workflows/pages.yml` whenever `main` or `fuel-log-app` changes
+It's published by `.github/workflows/pages.yml` whenever `fuel-log-app` changes
 (Settings → Pages → Source must be **GitHub Actions**).
 
 That version keeps the log on the device (no Claude account), opens with no signal once the line under
@@ -54,7 +54,11 @@ its edits are saved back into those same files as commits.
   on another device while you edited it, both sets of changes are kept (yours win where the same lines changed).
 - **Saving to GitHub:** Settings → paste a fine-grained GitHub token (this repository only,
   Contents: Read and write). Edits made with no signal wait on the device and save when there's signal.
-  Each save is a commit; the site republishes itself a few minutes later.
+  Each save is a commit; the site republishes itself a few minutes later. If one can't be saved (say its
+  file was deleted on another device), Settings → Waiting to save says why and has **Discard**.
+- **iPhone:** add it to the home screen first and use it only from the icon, and paste the key there. The
+  icon keeps its own copy, separate from Safari tabs (changes typed in a tab stay in that tab).
+- **Fuel:** correcting, adding or deleting an earlier day works the next day's Used out again.
 - **Tank tables for a new boat:** upload CSVs (`inches,gallons`) to `towboat-kb/boats/<boat>/fuel/tank-tables/`
   as `tank-2.csv`, `tank-3.csv`… (`tank-2p.csv` / `tank-2s.csv` if port and starboard differ).
 
@@ -67,5 +71,6 @@ its edits are saved back into those same files as commits.
 - Code: `src/calc.ts` all arithmetic · `src/cloudStore.ts` saving/sync · `src/pdf.ts` printout ·
   `src/DayScreen.tsx`, `src/History.tsx`, `src/Setup.tsx` screens · `src/App.tsx` shell.
 - Knowledge base app: `kb/index.html`, `src/kb/` (`fuel.ts` fuel math, `search.ts`, `edits.ts` file edits,
-  `sync.ts` saving to GitHub, `screens/`); tests in `src/kb/kb.test.ts`. `scripts/build-site.mjs` packs
+  `sync.ts` saving to GitHub, `screens/`); tests in `src/kb/*.test.ts`, run against a frozen copy of the
+  files in `src/kb/__fixtures__/` (so editing the real files never fails the publish). `scripts/build-site.mjs` packs
   `towboat-kb/` into the site (`kb/kb-data.json` + `kb/files/`) and writes each app's offline helper.

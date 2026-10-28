@@ -6,9 +6,11 @@ export const STATUSES = ['OPEN', 'WATCHING', 'RESOLVED', 'UNKNOWN'] as const;
 
 const cell = (s: string) => s.replace(/\r?\n/g, ' ').replace(/\|/g, '\\|').trim();
 
+export const timelineRow = (when: string, what: string) => `| ${cell(when)} | ${cell(what)} |`;
+
 /** Add a row to the "## Timeline" table (making the section if the file has none). */
 export function appendTimelineRow(text: string, when: string, what: string): string {
-  const row = `| ${cell(when)} | ${cell(what)} |`;
+  const row = timelineRow(when, what);
   const lines = text.split('\n');
   const h = lines.findIndex((l) => /^##\s+Timeline\b/i.test(l));
   if (h < 0) {
@@ -60,9 +62,14 @@ export function newIssueText(template: string, f: NewIssue): string {
   ];
   let text = template;
   for (const [k, v] of fields) text = setFrontmatterField(text, k, v);
-  text = text.replace(/^# <short title>$/m, `# ${f.title.replace(/\n/g, ' ')}`);
-  if (f.symptoms.trim())
-    text = text.replace(/(## Symptoms\n)What it does, when, under what conditions\. Numbers from the panel\/meter\. What's normal alongside it\.\n?/, `$1${f.symptoms.trim()}\n`);
+  // (replacer functions, so a "$1" or "$&" typed in the form stays as typed)
+  text = text.replace(/^# <short title>\r?$/m, () => `# ${f.title.replace(/\n/g, ' ')}`);
+  const sym = f.symptoms.trim();
+  if (sym) {
+    // under "## Symptoms", in place of the template's hint line if it has one
+    const re = /(^##[ \t]+Symptoms[ \t]*\r?\n)(What it does, when\b[^\n]*\n?)?/m;
+    text = re.test(text) ? text.replace(re, (_m, h: string) => `${h}${sym}\n`) : text.replace(/\n*$/, '\n\n') + `## Symptoms\n${sym}\n`;
+  }
   if (f.firstEntry) text = appendTimelineRow(text, f.firstEntry.when, f.firstEntry.what);
   return text;
 }
@@ -76,7 +83,7 @@ export function newBoatText(template: string, b: NewBoat, today: string): string
   let text = setFrontmatterField(template, 'boat', b.name);
   for (const [k, v] of Object.entries(b.fields)) if (v.trim()) text = setFrontmatterField(text, k, v);
   text = setFrontmatterField(text, 'last_updated', today);
-  return text.replace(/^# <boat name>$/m, `# ${b.name}`);
+  return text.replace(/^# <boat name>\r?$/m, () => `# ${b.name}`);
 }
 
 export const boatSlug = (name: string) => slugify(name.replace(/^(m\/?v|mv)\s+/i, ''));

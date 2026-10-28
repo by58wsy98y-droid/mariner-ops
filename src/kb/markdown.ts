@@ -47,7 +47,8 @@ export function parseInline(src: string): Inline[] {
     if ((m = /^\[([^\]]+)\]\(([^)\s]+)\)/.exec(rest))) { flush(); out.push({ t: 'link', href: m[2], c: parseInline(m[1]) }); i += m[0].length; continue; }
     const prev = i > 0 ? src[i - 1] : ' ';
     // (no lookbehind in these patterns: older iPhones can't read it)
-    if (/\s|[(\-/]/.test(prev) && (m = /^([*_])(\S(?:.*?\S)?)\1(?![A-Za-z0-9])/.exec(rest))) {
+    // (*P* is one letter in italics; a fill-in blank ___ stays as typed)
+    if (/\s|[(\-/]/.test(prev) && (m = /^([*_])(?!\1)(\S|\S.*?\S)\1(?![A-Za-z0-9*_])/.exec(rest))) {
       flush(); out.push({ t: 'em', c: parseInline(m[2]) }); i += m[0].length; continue;
     }
     text += src[i++];
@@ -100,7 +101,20 @@ export function parseMarkdown(md: string): Block[] {
       blocks.push({ t: 'list', ordered, start: ordered ? parseInt(li[2], 10) || 1 : 1, items: items.map(parseInline) });
       continue;
     }
-    if (/^>\s?/.test(line)) { endPara(); blocks.push({ t: 'quote', c: parseInline(line.replace(/^>\s?/, '')) }); continue; }
+    if (/^>/.test(line)) {
+      // a quote's lines join up into paragraphs; a bare ">" line starts a new one
+      endPara();
+      let q: string[] = [];
+      const endQuote = () => { if (q.length) blocks.push({ t: 'quote', c: parseInline(q.join(' ')) }); q = []; };
+      for (; i < lines.length && /^>/.test(lines[i]); i++) {
+        const t = lines[i].replace(/^>\s?/, '').trim();
+        if (t) q.push(t);
+        else endQuote();
+      }
+      endQuote();
+      i--;
+      continue;
+    }
     para.push(line.trim());
   }
   endPara();

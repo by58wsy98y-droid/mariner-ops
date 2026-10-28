@@ -21,7 +21,7 @@ export default function Settings() {
           <li>On GitHub: your picture → <b>Settings</b> → <b>Developer settings</b> → <b>Personal access tokens</b> → <b>Fine-grained tokens</b> → <b>Generate new token</b>.</li>
           <li>Name it “boat KB”, pick an expiry (up to a year), <b>Only select repositories</b> → <b>{store.config.repo}</b>.</li>
           <li>Permissions → Repository permissions → <b>Contents: Read and write</b>. Generate, and copy the token.</li>
-          <li>Paste it below on each phone or laptop you use. It stays on that device only.</li>
+          <li>Paste it below on each phone or laptop you use. It stays on that device only. On iPhone, paste it in the home-screen icon, not a Safari tab: they keep separate copies.</li>
         </ol>
         <label htmlFor="gh-token">GitHub key (token)<input id="gh-token" type="password" autoComplete="off" value={token} onChange={(e) => setToken(e.target.value)} placeholder={s.connected ? '•••••••• (saved on this device)' : 'github_pat_…'} /></label>
         <div className="actions">
@@ -33,11 +33,17 @@ export default function Settings() {
         <details>
           <summary className="small">Repository and branch</summary>
           <div className="grid3">
-            <label htmlFor="gh-owner">Owner<input id="gh-owner" value={adv.owner} onChange={(e) => setAdv({ ...adv, owner: e.target.value })} /></label>
-            <label htmlFor="gh-repo">Repository<input id="gh-repo" value={adv.repo} onChange={(e) => setAdv({ ...adv, repo: e.target.value })} /></label>
-            <label htmlFor="gh-branch">Branch<input id="gh-branch" value={adv.branch} onChange={(e) => setAdv({ ...adv, branch: e.target.value })} /></label>
+            <label htmlFor="gh-owner">Owner<input id="gh-owner" autoCapitalize="none" autoCorrect="off" spellCheck={false} value={adv.owner} onChange={(e) => setAdv({ ...adv, owner: e.target.value })} /></label>
+            <label htmlFor="gh-repo">Repository<input id="gh-repo" autoCapitalize="none" autoCorrect="off" spellCheck={false} value={adv.repo} onChange={(e) => setAdv({ ...adv, repo: e.target.value })} /></label>
+            <label htmlFor="gh-branch">Branch<input id="gh-branch" autoCapitalize="none" autoCorrect="off" spellCheck={false} value={adv.branch} onChange={(e) => setAdv({ ...adv, branch: e.target.value })} /></label>
           </div>
-          <button className="secondary" onClick={() => { store.setConfig(adv); setMsg('Saved.'); }}>Use these</button>
+          <button className="secondary" onClick={async () => {
+            const c = { owner: adv.owner.trim(), repo: adv.repo.trim(), branch: adv.branch.trim() };
+            if (!c.owner || !c.repo || !c.branch) return;
+            setAdv(c);
+            store.setConfig(c);
+            setMsg(s.connected ? await store.testConnection() : 'Saved.');
+          }}>Use these</button>
         </details>
       </section>
 
@@ -45,7 +51,16 @@ export default function Settings() {
         <h2>Waiting to save <span className="count">{pending.length}</span></h2>
         {pending.length ? (
           <>
-            <ul className="plain">{pending.map((q) => <li key={q.id}><span className="muted small">{new Date(q.at).toLocaleString()}</span> {q.label}</li>)}</ul>
+            <ul className="plain waiting">
+              {pending.map((q) => (
+                <li key={q.id}>
+                  <span><span className="muted small">{new Date(q.at).toLocaleString()}</span> {q.label}</span>
+                  <button className="secondary small-btn danger-text" onClick={() => {
+                    if (confirm(`Throw away “${q.label}”? It won't be saved to GitHub.`)) store.discard(q.id);
+                  }}>Discard</button>
+                </li>
+              ))}
+            </ul>
             {s.error && <p className="warnbox">{s.error}</p>}
             <button onClick={() => void store.sync()} disabled={!s.connected || s.syncing}>{s.syncing ? 'Saving…' : 'Save now'}</button>
           </>

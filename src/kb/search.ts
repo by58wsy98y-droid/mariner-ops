@@ -1,17 +1,27 @@
 // "Have I seen this before, on any boat?" — full-text search across every document.
+import { fmText } from './frontmatter';
 import { inlineText, type Block } from './markdown';
 import type { Corpus, Doc } from './corpus';
 
-/** Word endings stripped so "ramping", "ramps" and "ramped" all find "ramp". */
+/** Word endings stripped so "ramping", "ramps" and "ramped" all find "ramp" (and "batteries" "battery", "tripped" "trip"). */
 export function stem(w: string): string {
   let s = w.toLowerCase().replace(/'s$/, '');
+  if (s.length > 4 && s.endsWith('ies')) return s.slice(0, -3) + 'y';
   for (const suf of ['ing', 'ed', 'es', 's', 'e']) {
-    if (s.endsWith(suf) && s.length - suf.length >= 3) { s = s.slice(0, -suf.length); break; }
+    if (s.endsWith(suf) && s.length - suf.length >= 3) {
+      s = s.slice(0, -suf.length);
+      if ((suf === 'ing' || suf === 'ed') && s.length > 3 && /([bdgmnprt])\1$/.test(s)) s = s.slice(0, -1); // running → run
+      break;
+    }
   }
   return s;
 }
 
-export const words = (text: string) => text.toLowerCase().match(/[a-z0-9#][a-z0-9#'./-]*[a-z0-9]|[a-z0-9]/g) ?? [];
+export const words = (text: string) =>
+  text.toLowerCase()
+    .replace(/[\u2018\u2019]/g, "'") // iPhone's curly apostrophe
+    .replace(/(\d)(v|vac|vdc|hz|psi|rpm|gal|kw|mv|a)\b/g, '$1 $2') // 24V is found as "24 V"
+    .match(/[a-z0-9#][a-z0-9#'./-]*[a-z0-9]|[a-z0-9]/g) ?? [];
 const terms = (text: string) => words(text).flatMap((w) => [w, ...w.split(/[./-]/)]).filter(Boolean).map(stem);
 
 function blocksText(blocks: Block[]): string {
@@ -35,11 +45,14 @@ export function buildIndex(c: Corpus): Index {
     const weights = new Map<string, number>();
     const add = (text: string, w: number) => { for (const t of terms(text)) weights.set(t, (weights.get(t) ?? 0) + w); };
     const text = blocksText(doc.blocks);
+    // the file's other details: builder, engines, severity, applies to…
+    const details = Object.entries(doc.fm).filter(([k]) => !['title', 'tags', 'system'].includes(k)).map(([, v]) => fmText(v)).join('\n');
     add(doc.title, 6);
     add(doc.tags.join(' '), 4);
     add([doc.system, doc.boat?.replace(/-/g, ' ')].filter(Boolean).join(' '), 2);
+    add(details, 1);
     add(text, 1);
-    return { doc, weights, lines: text.split('\n').filter((l) => l.trim()) };
+    return { doc, weights, lines: [...text.split('\n'), ...details.split('\n')].filter((l) => l.trim()) };
   });
   const tags = [...new Set(c.docs.flatMap((d) => d.tags))].sort((a, b) => a.localeCompare(b));
   return { entries, tags };
@@ -54,6 +67,7 @@ function snippet(lines: string[], qs: string[]): string {
 export function search(index: Index, query: string, tagFilter: string[] = []): Hit[] {
   const qs = [...new Set(terms(query))];
   const want = tagFilter.map((t) => t.toLowerCase());
+  if (!qs.length && !want.length) return []; // only punctuation typed
   const out: Hit[] = [];
   for (const e of index.entries) {
     if (want.length && !want.every((t) => e.doc.tags.some((x) => x.toLowerCase() === t))) continue;
