@@ -3,11 +3,11 @@ import { boatName, similarIssues, statusWord, TYPE_LABEL } from '../corpus';
 import { STATUSES } from '../edits';
 import { fmText } from '../frontmatter';
 import Md from '../Md';
-import { useKb } from '../KbApp';
+import { go, useKb } from '../KbApp';
 import { DocRow, StatusPill, nowStamp } from './parts';
 
 export default function DocPage({ path }: { path: string }) {
-  const { corpus: c } = useKb();
+  const { corpus: c, save } = useKb();
   const doc = c.docs.find((d) => d.path === path);
   if (!doc) {
     return (
@@ -44,7 +44,13 @@ export default function DocPage({ path }: { path: string }) {
         {doc.type === 'issue' && <IssueActions path={doc.path} status={doc.status} />}
         <Md c={c} from={doc.path} blocks={blocks} />
         <div className="actions no-print">
+          <a className="button secondary" href={`#/edit/${encodeURI(doc.path)}`}>Edit</a>
           <button className="secondary" onClick={() => window.print()}>Print</button>
+          <button className="secondary danger-text" onClick={() => {
+            if (!confirm(`Delete “${doc.title}”? It's removed from GitHub too (GitHub keeps the history, so it can be brought back from there).`)) return;
+            save({ kind: 'delete', path: doc.path }, `delete ${doc.path.split('/').pop()}`);
+            go(doc.boat ? `#/boat/${doc.boat}` : '#/library');
+          }}>Delete</button>
         </div>
       </section>
 

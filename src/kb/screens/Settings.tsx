@@ -56,6 +56,12 @@ export default function Settings() {
       </section>
 
       <section className="card">
+        <h2>All files</h2>
+        <p className="small">See every file in the knowledge base, edit or delete what doesn't belong, or add a page to a folder.</p>
+        <a className="button secondary" href="#/files">Open all files</a>
+      </section>
+
+      <section className="card">
         <h2>This copy</h2>
         <p className="small">Published {new Date(store.builtAt).toLocaleString()}. Edits saved since then show from this device until the next publish picks them up.</p>
       </section>

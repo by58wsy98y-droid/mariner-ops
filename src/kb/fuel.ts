@@ -260,3 +260,24 @@ export function entryFromDetail(d: LoggedDay, date: string): FuelEntry | null {
     lubeReceived: num('lube_received'), water: num('water'), waterReceived: num('water_received'), notes: d.detail.notes ?? '',
   };
 }
+
+/** The month's table without this day (the rest of the file kept). */
+export function removeFuelMd(text: string, date: string): string {
+  const key = `${date.slice(5, 7)}/${date.slice(8, 10)}`;
+  const lines = text.split('\n');
+  const h = lines.findIndex((l) => /^\|\s*Date\s*\|/i.test(l));
+  if (h < 0) return text;
+  let end = h + 2;
+  while (end < lines.length && lines[end].trim().startsWith('|')) end++;
+  const rows = lines.slice(h + 2, end).filter((l) => {
+    const m = /^\|\s*(\d{1,2})\/(\d{1,2})/.exec(l);
+    return !(m && `${m[1].padStart(2, '0')}/${m[2].padStart(2, '0')}` === key);
+  });
+  return [...lines.slice(0, h + 2), ...rows, ...lines.slice(end)].join('\n');
+}
+
+export function removeFuelCsv(text: string, date: string): string {
+  const rows = parseCsv(text);
+  if (!rows.length) return text;
+  return [rows[0], ...rows.slice(1).filter((r) => r[0] !== date)].map((r) => r.map(csvCell).join(',')).join('\n') + '\n';
+}

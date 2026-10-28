@@ -48,6 +48,10 @@ its edits are saved back into those same files as commits.
   *Add to timeline*, *Change status* and similar issues; **New issue** and **Add a boat** forms;
   **Fuel**: soundings in inches → gallons from the boat's tank tables, the fuel/lube/water chain and
   truck alerts like the workbook, saved to `fuel/log-YYYY-MM.md` and `.csv`; procedures with Print; documents.
+- **Edit and delete:** every page has **Edit** (details as boxes, the text as one big box) and **Delete**;
+  boat pages have **Delete this boat**; fuel days, documents too. **Settings → All files** lists everything
+  to edit, delete, or add a page to any folder. Deleted files stay in GitHub's history. If a file changed
+  on another device while you edited it, both sets of changes are kept (yours win where the same lines changed).
 - **Saving to GitHub:** Settings → paste a fine-grained GitHub token (this repository only,
   Contents: Read and write). Edits made with no signal wait on the device and save when there's signal.
   Each save is a commit; the site republishes itself a few minutes later.

@@ -7,7 +7,8 @@ import { useKb } from '../KbApp';
 const size = (b: number) => (b > 1e6 ? `${(b / 1e6).toFixed(1)} MB` : `${Math.max(1, Math.round(b / 1e3))} KB`);
 
 export default function Documents() {
-  const { store, docsList } = useKb();
+  const { store, docsList: allDocs, save } = useKb();
+  const docsList = allDocs.filter((d) => !store.isGone(d.path));
   const [msg, setMsg] = useState('');
   // Descriptions come from docs/README.md's table.
   const about = new Map<string, { what: string; made: string }>();
@@ -32,11 +33,14 @@ export default function Documents() {
             const name = d.path.split('/').pop()!;
             const a = about.get(name);
             return (
-              <a key={d.path} className="docrow" href={fileHref(d.path)} target="_blank" rel="noreferrer">
-                <span className="docrow-title">{name}</span>
-                <span className="docrow-meta"><span>{size(d.size)}</span>{a?.made && <span>{a.made}</span>}</span>
-                {a?.what && <span className="docrow-snip">{a.what}</span>}
-              </a>
+              <div key={d.path} className="docwrap">
+                <a className="docrow" href={fileHref(d.path)} target="_blank" rel="noreferrer">
+                  <span className="docrow-title">{name}</span>
+                  <span className="docrow-meta"><span>{size(d.size)}</span>{a?.made && <span>{a.made}</span>}</span>
+                  {a?.what && <span className="docrow-snip">{a.what}</span>}
+                </a>
+                <button className="secondary slim danger-text" onClick={() => { if (confirm(`Delete ${name}? GitHub keeps the history.`)) save({ kind: 'delete', path: d.path }, `delete ${name}`); }}>Delete</button>
+              </div>
             );
           })}
         </div>

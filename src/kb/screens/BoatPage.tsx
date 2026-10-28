@@ -3,7 +3,7 @@ import { isOpen } from '../corpus';
 import { section } from '../markdown';
 import Md, { docHref } from '../Md';
 import { loggedDays } from '../fuel';
-import { useKb } from '../KbApp';
+import { go, useKb } from '../KbApp';
 import { DocRow } from './parts';
 
 const LABELS: Record<string, string> = {
@@ -13,7 +13,7 @@ const LABELS: Record<string, string> = {
 };
 
 export default function BoatPage({ slug }: { slug: string }) {
-  const { corpus: c, store } = useKb();
+  const { corpus: c, store, save } = useKb();
   const boat = c.boats.find((b) => b.slug === slug);
   if (!boat) return <section className="card"><h2>Boat not found</h2><p>No boat called “{slug}”. <a href="#/">Back to search</a></p></section>;
   const docs = c.docs.filter((d) => d.boat === slug);
@@ -74,6 +74,19 @@ export default function BoatPage({ slug }: { slug: string }) {
       <section className="card">
         <h2>All issues <span className="count">{issues.length}</span></h2>
         <div className="list">{issues.map((d) => <DocRow key={d.path} c={c} d={d} showBoat={false} />)}</div>
+      </section>
+
+      <section className="card">
+        <h2>Files for this boat</h2>
+        <div className="actions">
+          <a className="button secondary" href="#/files">Edit or delete files</a>
+          <button className="secondary danger-text" onClick={() => {
+            const typed = prompt(`Delete ${boat.name} and ALL its files (systems, issues, fuel logs, tank tables)? GitHub keeps the history. Type the word DELETE to confirm.`);
+            if (typed?.trim().toUpperCase() !== 'DELETE') return;
+            save({ kind: 'deleteDir', dir: `boats/${slug}/` }, `delete boat ${boat.name}`);
+            go('#/');
+          }}>Delete this boat</button>
+        </div>
       </section>
     </div>
   );

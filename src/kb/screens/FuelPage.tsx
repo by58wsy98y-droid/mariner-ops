@@ -131,6 +131,14 @@ export default function FuelPage({ slug }: { slug: string }) {
         <label htmlFor="notes">Notes<textarea id="notes" rows={2} value={form.notes ?? ''} onChange={(e) => set('notes', e.target.value)} placeholder="Fueled before sounding; 3s then 4s" /></label>
         {calc.bad.length > 0 && <p className="warnbox">Past the end of the tank table: {calc.bad.join(', ')}. Check the sounding.</p>}
         <button className="big" onClick={doSave} disabled={!canSave}>{saved ? `Save changes to ${date}` : `Save ${date}`}</button>
+        {saved && (
+          <button className="secondary danger-text" onClick={() => {
+            if (!confirm(`Delete the fuel log entry for ${date}? Later days' "used" will then compare to the day before it.`)) return;
+            save({ kind: 'fuelDelete', boat: slug, date }, `delete fuel day ${date}`);
+            setForm({});
+            setMsg(`Deleted ${date}.`);
+          }}>Delete this day</button>
+        )}
         {msg && <p className="small" role="status">{msg}</p>}
       </section>
 

@@ -11,6 +11,8 @@ import NewBoat from './screens/NewBoat';
 import Library from './screens/Library';
 import Documents from './screens/Documents';
 import Settings from './screens/Settings';
+import EditFile from './screens/EditFile';
+import Files from './screens/Files';
 
 export interface DocFile { path: string; size: number }
 export interface Kb {
@@ -71,8 +73,10 @@ export default function KbApp({ store, docsList }: { store: KbStore; docsList: D
   else if (screen === 'library') page = <Library />;
   else if (screen === 'docs') page = <Documents />;
   else if (screen === 'settings') page = <Settings />;
+  else if (screen === 'edit' && a) page = <EditFile key={[a, ...rest].join('/')} path={[a, ...rest].join('/')} />;
+  else if (screen === 'files') page = <Files />;
   else page = <Home />;
-  const tab = screen === 'library' || screen === 'docs' || screen === 'settings' ? screen : 'home';
+  const tab = screen === 'library' || screen === 'docs' ? screen : screen === 'settings' || screen === 'files' ? 'settings' : 'home';
 
   return (
     <Ctx.Provider value={kb}>
