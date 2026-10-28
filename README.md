@@ -38,6 +38,22 @@ Move a log between devices or versions with Backup → Restore.
 On iPhone, add it to the home screen first and use it only from the icon: the icon keeps its own copy of
 the log, and Safari can erase a site's data in a tab after a week unused.
 
+## Towboat Knowledge Base
+**https://by58wsy98y-droid.github.io/mariner-ops/kb/** (public, like the rest of this repository).
+A searchable record of boats, their systems, issues and how they were solved, fuel logs and procedures.
+The files in `towboat-kb/` are the source of truth (see `towboat-kb/README.md`); the app reads them, and
+its edits are saved back into those same files as commits.
+
+- **Search** across every boat; **boat pages** with open issues first; **issue pages** with
+  *Add to timeline*, *Change status* and similar issues; **New issue** and **Add a boat** forms;
+  **Fuel**: soundings in inches → gallons from the boat's tank tables, the fuel/lube/water chain and
+  truck alerts like the workbook, saved to `fuel/log-YYYY-MM.md` and `.csv`; procedures with Print; documents.
+- **Saving to GitHub:** Settings → paste a fine-grained GitHub token (this repository only,
+  Contents: Read and write). Edits made with no signal wait on the device and save when there's signal.
+  Each save is a commit; the site republishes itself a few minutes later.
+- **Tank tables for a new boat:** upload CSVs (`inches,gallons`) to `towboat-kb/boats/<boat>/fuel/tank-tables/`
+  as `tank-2.csv`, `tank-3.csv`… (`tank-2p.csv` / `tank-2s.csv` if port and starboard differ).
+
 ## For whoever maintains it
 - `npm test` runs the tests (`src/calc.test.ts` checks the math against the printed 10/20/2026 log in
   `seed/`; `src/cloudStore.test.ts` covers saving with no signal; `src/pdf.test.ts` the printout).
@@ -46,3 +62,6 @@ the log, and Safari can erase a site's data in a tab after a week unused.
   in `dist-site/` (everything bundled, offline helper `sw.js`, saves on the device via `src/localStore.ts`).
 - Code: `src/calc.ts` all arithmetic · `src/cloudStore.ts` saving/sync · `src/pdf.ts` printout ·
   `src/DayScreen.tsx`, `src/History.tsx`, `src/Setup.tsx` screens · `src/App.tsx` shell.
+- Knowledge base app: `kb/index.html`, `src/kb/` (`fuel.ts` fuel math, `search.ts`, `edits.ts` file edits,
+  `sync.ts` saving to GitHub, `screens/`); tests in `src/kb/kb.test.ts`. `scripts/build-site.mjs` packs
+  `towboat-kb/` into the site (`kb/kb-data.json` + `kb/files/`) and writes each app's offline helper.
