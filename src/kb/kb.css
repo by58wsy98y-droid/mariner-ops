@@ -123,3 +123,8 @@ details summary { cursor: pointer; padding-block: 6px; }
 .docwrap .docrow { border-bottom: 0; }
 .waiting li { display: flex; gap: 10px; align-items: center; justify-content: space-between; padding: 4px 0; }
 .small-btn { min-height: 36px; padding: 4px 10px; font-size: 14px; flex: none; }
+.md ul.checklist { list-style: none; padding-left: 0; display: grid; gap: 0; }
+.md ul.checklist li { display: grid; grid-template-columns: 28px 1fr; gap: 6px; align-items: start; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.md ul.checklist li:last-child { border-bottom: 0; }
+.md ul.checklist .box { font-size: 22px; line-height: 1.1; }
+@media print { .md ul.checklist li { border-bottom: 0.6pt solid #555; padding: 5pt 0; break-inside: avoid; } }

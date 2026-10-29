@@ -32,6 +32,14 @@ function inlines(c: Corpus, from: string, xs: Inline[]): ReactNode {
   });
 }
 
+/** A checklist line: "- [ ] Cover exhaust stacks" (GitHub shows these as tick boxes too). */
+function box(it: Inline[]): { done: boolean; rest: Inline[] } | null {
+  const first = it[0];
+  const m = first?.t === 'text' ? /^\[([ xX])\]\s+/.exec(first.v) : null;
+  if (!m || first.t !== 'text') return null;
+  return { done: m[1] !== ' ', rest: [{ t: 'text', v: first.v.slice(m[0].length) }, ...it.slice(1)] };
+}
+
 export default function Md({ c, from, blocks }: { c: Corpus; from: string; blocks: Block[] }) {
   return (
     <div className="md">
@@ -47,7 +55,15 @@ export default function Md({ c, from, blocks }: { c: Corpus; from: string; block
           case 'code': return <pre key={i}><code>{b.v}</code></pre>;
           case 'list': {
             const L = b.ordered ? 'ol' : 'ul';
-            return <L key={i} start={b.ordered ? b.start : undefined}>{b.items.map((it, j) => <li key={j}>{inlines(c, from, it)}</li>)}</L>;
+            const boxes = b.items.some((it) => box(it));
+            return (
+              <L key={i} start={b.ordered ? b.start : undefined} className={boxes ? 'checklist' : undefined}>
+                {b.items.map((it, j) => {
+                  const bx = box(it);
+                  return bx ? <li key={j}><span className="box" aria-hidden>{bx.done ? '☑' : '☐'}</span><span>{inlines(c, from, bx.rest)}</span></li> : <li key={j}>{inlines(c, from, it)}</li>;
+                })}
+              </L>
+            );
           }
           case 'table':
             return (
