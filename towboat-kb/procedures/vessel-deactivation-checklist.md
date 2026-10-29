@@ -26,6 +26,6 @@ Coming back out: [Vessel activation checklist](vessel-activation-checklist.md).
 - [ ] Review repair plans, if applicable, with Port Captain and Port Engineer
 - [ ] Make frequent security and fire-watch rounds through the vessel
 - [ ] Check email at least once a day
-- [ ] Refer to *Conquer Checklist – External & Internal Transfer Procedures* if a fuel transfer is to be conducted while deactivated. **Gravitational transfers are prohibited when a vessel is going on or coming off dry-dock.**
+- [ ] Refer to **_Conquer Checklist – External & Internal Transfer Procedures_** if a fuel transfer is to be conducted while deactivated. Gravitational transfers are prohibited when a vessel is going on or coming off dry-dock.
 
 Gravitating between tanks, when it is allowed: [Gravitating fuel between tanks](gravitating-and-fuel-valves.md).
