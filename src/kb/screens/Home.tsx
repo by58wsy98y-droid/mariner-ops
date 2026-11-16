@@ -3,7 +3,6 @@ import { TYPE_LABEL, type DocType } from '../corpus';
 import { search } from '../search';
 import { useKb } from '../KbApp';
 import { DocRow } from './parts';
-import { fleetHref, groups as fleetGroups } from '../fleet';
 
 const ORDER: DocType[] = ['maintenance', 'procedure', 'issue', 'system', 'knowledge', 'boat', 'fuel'];
 const SAVED = 'kb:lastSearch';
@@ -59,9 +58,6 @@ export default function Home() {
         <>
           <section className="card">
             <h2>Fleet <span className="count">{c.boats.length} boats</span></h2>
-            <div className="chips">
-              {fleetGroups(c.boats, 'engine').map((g) => <a key={g.model} className="chip-btn" href={fleetHref('engine', g.model)}>{g.model} · {g.boats.length}</a>)}
-            </div>
             <a className="button" href="#/fleet">Open the fleet</a>
           </section>
         </>
