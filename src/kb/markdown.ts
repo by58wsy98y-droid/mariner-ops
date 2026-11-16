@@ -6,7 +6,8 @@ export type Inline =
   | { t: 'strong'; c: Inline[] }
   | { t: 'em'; c: Inline[] }
   | { t: 'code'; v: string }
-  | { t: 'link'; href: string; c: Inline[] };
+  | { t: 'link'; href: string; c: Inline[] }
+  | { t: 'img'; src: string; alt: string }; // a picture kept with the knowledge base (e.g. a figure on a maintenance card)
 
 export type Block =
   | { t: 'h'; level: number; c: Inline[]; text: string }
@@ -44,6 +45,7 @@ export function parseInline(src: string): Inline[] {
     let m: RegExpExecArray | null;
     if ((m = /^`([^`]+)`/.exec(rest))) { flush(); out.push({ t: 'code', v: m[1] }); i += m[0].length; continue; }
     if ((m = /^\*\*(.+?)\*\*/.exec(rest))) { flush(); out.push({ t: 'strong', c: parseInline(m[1]) }); i += m[0].length; continue; }
+    if ((m = /^!\[([^\]]*)\]\(([^)\s]+)\)/.exec(rest))) { flush(); out.push({ t: 'img', src: m[2], alt: m[1] }); i += m[0].length; continue; }
     if ((m = /^\[([^\]]+)\]\(([^)\s]+)\)/.exec(rest))) { flush(); out.push({ t: 'link', href: m[2], c: parseInline(m[1]) }); i += m[0].length; continue; }
     const prev = i > 0 ? src[i - 1] : ' ';
     // (no lookbehind in these patterns: older iPhones can't read it)
@@ -123,7 +125,7 @@ export function parseMarkdown(md: string): Block[] {
 
 /** Plain text of a document, for searching and snippets. */
 export const inlineText = (c: Inline[]): string =>
-  c.map((x) => (x.t === 'text' || x.t === 'code' ? x.v : inlineText(x.c))).join('');
+  c.map((x) => (x.t === 'text' || x.t === 'code' ? x.v : x.t === 'img' ? x.alt : inlineText(x.c))).join('');
 
 /** The blocks under one "## Heading" (until the next heading of the same or higher level). */
 export function section(blocks: Block[], title: RegExp): Block[] {

@@ -1,7 +1,7 @@
 // The fleet: each boat's spec-sheet fields (in its boat.md) and the boats grouped by the equipment they run,
 // so a manual or a known problem for one model can be found from every boat that has it.
-import { fmText, type FmValue } from './frontmatter';
-import type { Boat } from './corpus';
+import { fmList, fmText, type FmValue } from './frontmatter';
+import type { Boat, Doc } from './corpus';
 
 export type Kind = 'engine' | 'generator' | 'gear';
 
@@ -50,3 +50,13 @@ export function boatMatches(b: Boat, q: string): boolean {
 }
 
 export const fleetHref = (kind: Kind, model: string) => `#/fleet/${kind}/${encodeURIComponent(model)}`;
+
+/** Does the boat have this kind of equipment listed (model or as printed)? */
+export const hasKind = (b: Boat, kind: Kind) => !!(modelOf(b, kind) || spec(b, KINDS.find((x) => x.kind === kind)!.printed));
+
+/** Maintenance cards for a boat: those whose `equipment:` names a kind of equipment the boat has. */
+export function cardsFor(b: Boat, docs: Doc[]): Doc[] {
+  return docs
+    .filter((d) => d.type === 'maintenance' && fmList(d.fm.equipment).some((k) => isKind(k) && hasKind(b, k)))
+    .sort((x, y) => fmText(x.fm.mpc_code).localeCompare(fmText(y.fm.mpc_code)) || x.title.localeCompare(y.title));
+}

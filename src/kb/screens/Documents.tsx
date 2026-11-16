@@ -8,7 +8,8 @@ const size = (b: number) => (b > 1e6 ? `${(b / 1e6).toFixed(1)} MB` : `${Math.ma
 
 export default function Documents() {
   const { store, docsList: allDocs, save } = useKb();
-  const docsList = allDocs.filter((d) => !store.isGone(d.path));
+  const kept = allDocs.filter((d) => !store.isGone(d.path)); // documents, and pictures used on pages (kept for no signal too)
+  const docsList = kept.filter((d) => d.path.startsWith('docs/'));
   const [msg, setMsg] = useState('');
   // Descriptions come from docs/README.md's table.
   const about = new Map<string, { what: string; made: string }>();
@@ -20,8 +21,8 @@ export default function Documents() {
   const keepAll = async () => {
     setMsg('Saving documents on this device…');
     let ok = 0;
-    for (const d of docsList) { try { const r = await fetch(fileHref(d.path)); if (r.ok) { await r.blob(); ok++; } } catch { /* no signal */ } }
-    setMsg(ok === docsList.length ? `All ${ok} documents will open with no signal.` : `Saved ${ok} of ${docsList.length}. Try again with better signal for the rest.`);
+    for (const d of kept) { try { const r = await fetch(fileHref(d.path)); if (r.ok) { await r.blob(); ok++; } } catch { /* no signal */ } }
+    setMsg(ok === kept.length ? `All ${docsList.length} documents and the pictures on cards will open with no signal.` : `Saved ${ok} of ${kept.length}. Try again with better signal for the rest.`);
   };
   return (
     <div className="screen">

@@ -3,6 +3,7 @@ import { boatName, similarIssues, statusWord, TYPE_LABEL } from '../corpus';
 import { STATUSES } from '../edits';
 import { fmText } from '../frontmatter';
 import Md, { fileHref } from '../Md';
+import MpcCard from './MpcCard';
 import { go, useKb } from '../KbApp';
 import { DocRow, StatusPill, nowStamp } from './parts';
 
@@ -26,10 +27,10 @@ export default function DocPage({ path }: { path: string }) {
     <div className="screen">
       <section className="card doc">
         <div className="crumbs no-print">
-          {doc.boat ? <a href={`#/boat/${doc.boat}`}>{boatName(c, doc.boat)}</a> : <a href="#/library">Procedures &amp; knowledge</a>}
+          {doc.boat ? <a href={`#/boat/${doc.boat}`}>{boatName(c, doc.boat)}</a> : <a href="#/library">Library</a>}
           <span> · {TYPE_LABEL[doc.type]}</span>
         </div>
-        <h2 className="page-title">{doc.title}</h2>
+        {doc.type !== 'maintenance' && <h2 className="page-title">{doc.title}</h2>}
         {doc.type === 'issue' && (
           <div className="issue-meta">
             <StatusPill status={doc.status} />
@@ -41,9 +42,9 @@ export default function DocPage({ path }: { path: string }) {
             {doc.tags.length > 0 && <span className="chips">{doc.tags.map((t) => <span key={t} className="chip">{t}</span>)}</span>}
           </div>
         )}
-        {doc.type !== 'issue' && doc.type !== 'boat' && <Details fm={doc.fm} />}
+        {doc.type !== 'issue' && doc.type !== 'boat' && doc.type !== 'maintenance' && <Details fm={doc.fm} />}
         {doc.type === 'issue' && <IssueActions key={doc.path} path={doc.path} status={doc.status} />}
-        <Md c={c} from={doc.path} blocks={blocks} />
+        {doc.type === 'maintenance' ? <MpcCard c={c} doc={doc} /> : <Md c={c} from={doc.path} blocks={blocks} />}
         <div className="actions no-print">
           <a className="button secondary" href={`#/edit/${encodeURI(doc.path)}`}>Edit</a>
           <button className="secondary" onClick={() => window.print()}>Print</button>

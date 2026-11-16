@@ -5,7 +5,7 @@ import { useKb } from '../KbApp';
 import { DocRow } from './parts';
 import { fleetHref, groups as fleetGroups } from '../fleet';
 
-const ORDER: DocType[] = ['issue', 'system', 'procedure', 'knowledge', 'boat', 'fuel'];
+const ORDER: DocType[] = ['maintenance', 'procedure', 'issue', 'system', 'knowledge', 'boat', 'fuel'];
 const SAVED = 'kb:lastSearch';
 const SAVED_TAGS = 'kb:lastTags';
 

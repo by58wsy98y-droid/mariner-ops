@@ -5,9 +5,9 @@ import { parseMarkdown, type Block } from './markdown';
 
 export interface KbFile { path: string; text: string }
 
-export type DocType = 'boat' | 'system' | 'issue' | 'fuel' | 'procedure' | 'knowledge';
+export type DocType = 'boat' | 'system' | 'issue' | 'fuel' | 'procedure' | 'knowledge' | 'maintenance';
 export const TYPE_LABEL: Record<DocType, string> = {
-  boat: 'Boats', system: 'Systems', issue: 'Troubleshooting log', fuel: 'Fuel', procedure: 'Procedures', knowledge: 'Knowledge',
+  boat: 'Boats', system: 'Systems', issue: 'Troubleshooting log', fuel: 'Fuel', procedure: 'Procedures', knowledge: 'Knowledge', maintenance: 'Maintenance cards',
 };
 
 export interface Doc {
@@ -39,6 +39,7 @@ export function docType(path: string): DocType | null {
   if (/^boats\/[^/]+\/fuel\/[^/]+\.md$/.test(path)) return 'fuel';
   if (/^procedures\/[^/]+\.md$/.test(path) && !/README\.md$/.test(path)) return 'procedure';
   if (/^knowledge\/[^/]+\.md$/.test(path) && !/README\.md$/.test(path)) return 'knowledge';
+  if (/^maintenance\/[^/]+\.md$/.test(path) && !/README\.md$/.test(path)) return 'maintenance';
   return null; // README, templates, app-spec, docs/ and CSV files aren't documents
 }
 

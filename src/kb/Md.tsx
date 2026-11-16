@@ -1,7 +1,7 @@
 // Draws a knowledge-base file. File names written in the text (`issues/....md`, `/docs/....pdf`)
 // become links to that page or document.
 import { Fragment, type ReactNode } from 'react';
-import { findFile, type Corpus } from './corpus';
+import { findFile, resolvePath, type Corpus } from './corpus';
 import { safeHref, type Block, type Inline } from './markdown';
 
 export const docHref = (path: string) => `#/doc/${encodeURI(path)}`;
@@ -12,6 +12,12 @@ function linkFor(c: Corpus, from: string, ref: string): string | null {
   if (p) return p.endsWith('.md') ? docHref(p) : fileHref(p);
   if (/^\/?docs\/[^/]+\.[a-z0-9]+$/i.test(ref)) return fileHref(ref.replace(/^\//, '')); // documents (not in the text copy)
   return null;
+}
+
+/** Pictures come only from the knowledge base's own files (never from another site). */
+function imgSrc(from: string, src: string): string | null {
+  if (/^[a-z]+:/i.test(src) || src.startsWith('//')) return null;
+  return fileHref(resolvePath(from, src));
 }
 
 function inlines(c: Corpus, from: string, xs: Inline[]): ReactNode {
@@ -27,6 +33,10 @@ function inlines(c: Corpus, from: string, xs: Inline[]): ReactNode {
       case 'link': {
         const href = safeHref(x.href) ?? linkFor(c, from, x.href);
         return href ? <a key={i} href={href} target={href.startsWith('http') ? '_blank' : undefined} rel="noreferrer">{inlines(c, from, x.c)}</a> : <Fragment key={i}>{inlines(c, from, x.c)}</Fragment>;
+      }
+      case 'img': {
+        const src = imgSrc(from, x.src);
+        return src ? <img key={i} src={src} alt={x.alt} loading="lazy" /> : <Fragment key={i}>{x.alt}</Fragment>;
       }
     }
   });
@@ -49,7 +59,17 @@ export default function Md({ c, from, blocks }: { c: Corpus; from: string; block
             const H = `h${Math.min(6, b.level + 1)}` as 'h2'; // the page title is the h1
             return <H key={i}>{inlines(c, from, b.c)}</H>;
           }
-          case 'p': return <p key={i}>{inlines(c, from, b.c)}</p>;
+          case 'p': {
+            // a picture on its own line is a figure; its text in [ ] is the caption
+            const only = b.c.length === 1 && b.c[0].t === 'img' ? b.c[0] : null;
+            if (only) {
+              const src = imgSrc(from, only.src);
+              return src ? <figure key={i}><img src={src} alt={only.alt || 'Picture'} loading="lazy" />{only.alt && <figcaption>{only.alt}</figcaption>}</figure> : null;
+            }
+            // "a. ..." lines under a step sit indented, like the sub-items on the paper card
+            const sub = b.c[0]?.t === 'text' && /^[a-z][.)]\s/.test(b.c[0].v);
+            return <p key={i} className={sub ? 'sub' : undefined}>{inlines(c, from, b.c)}</p>;
+          }
           case 'quote': return <blockquote key={i}>{inlines(c, from, b.c)}</blockquote>;
           case 'hr': return <hr key={i} />;
           case 'code': return <pre key={i}><code>{b.v}</code></pre>;

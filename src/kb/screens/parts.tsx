@@ -1,6 +1,7 @@
 // Small pieces shared by the screens.
 import { boatName, statusWord, type Corpus, type Doc } from '../corpus';
 import { modelOf } from '../fleet';
+import { fmText } from '../frontmatter';
 import { docHref } from '../Md';
 
 export function StatusPill({ status }: { status?: string }) {
@@ -20,6 +21,7 @@ export function DocRow({ c, d, snippet, showBoat = true }: { c: Corpus; d: Doc; 
       </span>
       <span className="docrow-meta">
         {showBoat && d.boat && <span className="chip">{boatName(c, d.boat)}{engineOf(c, d.boat) && <> · {engineOf(c, d.boat)}</>}</span>}
+        {d.type === 'maintenance' && <>{[d.fm.mpc_code, d.fm.frequency, d.fm.applies_to].map((v) => fmText(v)).filter(Boolean).map((v) => <span key={v}>{v}</span>)}</>}
         {d.date && <span>{d.date}</span>}
         {d.system && <span>{d.system}</span>}
       </span>

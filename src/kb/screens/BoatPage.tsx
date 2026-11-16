@@ -1,6 +1,6 @@
 import { fmText } from '../frontmatter';
 import { isOpen, type Boat, type Corpus } from '../corpus';
-import { KINDS, SPEC_LABEL, fleetHref, groups, modelOf, spec } from '../fleet';
+import { KINDS, SPEC_LABEL, cardsFor, fleetHref, groups, modelOf, spec } from '../fleet';
 import { section } from '../markdown';
 import Md, { docHref } from '../Md';
 import { loggedDays } from '../fuel';
@@ -90,6 +90,13 @@ export default function BoatPage({ slug }: { slug: string }) {
           <a className="button secondary" href={docHref(boat.doc.path)}>All boat notes</a>
         </div>
       </section>
+
+      {cardsFor(boat, c.docs).length > 0 && (
+        <section className="card">
+          <h2>Maintenance cards <span className="count">{cardsFor(boat, c.docs).length}</span></h2>
+          <div className="list">{cardsFor(boat, c.docs).map((d) => <DocRow key={d.path} c={c} d={d} />)}</div>
+        </section>
+      )}
 
       {know.length > 0 && (
         <section className="card">

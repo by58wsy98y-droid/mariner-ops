@@ -90,6 +90,7 @@ export default function KbApp({ store, docsList }: { store: KbStore; docsList: D
   else if (screen === 'fleet') page = <Fleet kind={isKind(a) ? a : undefined} model={isKind(a) && rest.length ? rest.join('/') : undefined} />;
   else page = <Home />;
   const tab = screen === 'library' || screen === 'docs' ? screen
+    : (screen === 'doc' || screen === 'edit') && ['procedures', 'knowledge', 'maintenance'].includes(a) ? 'library'
     : screen === 'settings' || screen === 'files' ? 'settings'
     : ['fleet', 'boat', 'fuel', 'new-issue', 'new-boat'].includes(screen) || ((screen === 'doc' || screen === 'edit') && a === 'boats') ? 'fleet' : 'home';
 
