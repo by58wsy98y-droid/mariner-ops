@@ -3,6 +3,7 @@ import { TYPE_LABEL, isOpen, type DocType } from '../corpus';
 import { search } from '../search';
 import { useKb } from '../KbApp';
 import { DocRow } from './parts';
+import { fleetHref, groups as fleetGroups } from '../fleet';
 
 const ORDER: DocType[] = ['issue', 'system', 'procedure', 'knowledge', 'boat', 'fuel'];
 const SAVED = 'kb:lastSearch';
@@ -57,19 +58,11 @@ export default function Home() {
       ) : (
         <>
           <section className="card">
-            <h2>Boats</h2>
-            <div className="list">
-              {c.boats.map((b) => (
-                <a key={b.slug} className="docrow" href={`#/boat/${b.slug}`}>
-                  <span className="docrow-title">{b.name}</span>
-                  <span className="docrow-meta">
-                    <span>{c.docs.filter((d) => d.boat === b.slug && isOpen(d)).length} open issues</span>
-                    <span>{String(b.doc.fm.engines ?? '')}</span>
-                  </span>
-                </a>
-              ))}
+            <h2>Fleet <span className="count">{c.boats.length} boats</span></h2>
+            <div className="chips">
+              {fleetGroups(c.boats, 'engine').map((g) => <a key={g.model} className="chip-btn" href={fleetHref('engine', g.model)}>{g.model} · {g.boats.length}</a>)}
             </div>
-            <a className="button secondary" href="#/new-boat">+ Add a boat</a>
+            <a className="button" href="#/fleet">Open the fleet</a>
           </section>
           <section className="card">
             <h2>Open issues, all boats</h2>

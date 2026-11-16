@@ -4,6 +4,7 @@ company: Marquette Transportation Company, LLC
 builder: St. Louis Ship
 type: Twin-screw river towboat, upper Mississippi
 engines: 2 x EMD 12-710 (EMDEC electronic, sender + receiver ECM per engine)
+engine_model: EMD 12-710
 controls: Single-lever electronic controls (STATION ACTIVE / SYNC / LO IDLE panel), CSIM + ERIM, Inland Power Group interface panel
 rated_rpm: 900
 idle_rpm: 350

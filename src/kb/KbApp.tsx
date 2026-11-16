@@ -13,6 +13,8 @@ import Documents from './screens/Documents';
 import Settings from './screens/Settings';
 import EditFile from './screens/EditFile';
 import Files from './screens/Files';
+import Fleet from './screens/Fleet';
+import { isKind } from './fleet';
 
 export interface DocFile { path: string; size: number }
 export interface Kb {
@@ -54,6 +56,8 @@ function useOffline(): Kb['offline'] {
   return state;
 }
 
+const fullyDecoded = (s: string) => { try { return decodeURIComponent(s); } catch { return s; } };
+
 export default function KbApp({ store, docsList }: { store: KbStore; docsList: DocFile[] }) {
   const version = useSyncExternalStore((cb) => store.subscribe(cb), () => store.view());
   const status = store.status();
@@ -83,8 +87,11 @@ export default function KbApp({ store, docsList }: { store: KbStore; docsList: D
   else if (screen === 'settings') page = <Settings />;
   else if (screen === 'edit' && a) page = <EditFile key={[a, ...rest].join('/')} path={[a, ...rest].join('/')} />;
   else if (screen === 'files') page = <Files />;
+  else if (screen === 'fleet') page = <Fleet kind={isKind(a) ? a : undefined} model={isKind(a) && rest.length ? fullyDecoded(rest.join('/')) : undefined} />;
   else page = <Home />;
-  const tab = screen === 'library' || screen === 'docs' ? screen : screen === 'settings' || screen === 'files' ? 'settings' : 'home';
+  const tab = screen === 'library' || screen === 'docs' ? screen
+    : screen === 'settings' || screen === 'files' ? 'settings'
+    : ['fleet', 'boat', 'fuel', 'new-issue', 'new-boat'].includes(screen) ? 'fleet' : 'home';
 
   return (
     <Ctx.Provider value={kb}>
@@ -100,6 +107,7 @@ export default function KbApp({ store, docsList }: { store: KbStore; docsList: D
         <main className="wrap">{page}</main>
         <nav>
           <div className="wrap">
+            <button className={tab === 'fleet' ? 'on' : ''} onClick={() => go('#/fleet')}>Fleet</button>
             <button className={tab === 'home' ? 'on' : ''} onClick={() => go('#/')}>Search</button>
             <button className={tab === 'library' ? 'on' : ''} onClick={() => go('#/library')}>Library</button>
             <button className={tab === 'docs' ? 'on' : ''} onClick={() => go('#/docs')}>Docs</button>

@@ -2,9 +2,19 @@ import { useState } from 'react';
 import { boatFields, boatSlug, newBoatText } from '../edits';
 import { go, useKb } from '../KbApp';
 import { today } from './parts';
+import { SPEC_LABEL } from '../fleet';
 
-const FALLBACK = `---\nboat:\ncompany:\nbuilder:\ntype:\nengines:\ncontrols:\nrated_rpm:\nidle_rpm:\ndc_system:\nsteering:\nfuel_capacity_full:\nlast_updated:\n---\n\n# <boat name>\n\n## Quick facts\n\n## Open issues\n| Issue | Status | File |\n|---|---|---|\n\n## Things to know walking aboard\n\n## People / contacts\n`;
-const LABEL: Record<string, string> = { fuel_capacity_full: 'Fuel capacity (e.g. 91,500 gal usual top-off)', dc_system: 'DC system', rated_rpm: 'Rated rpm', idle_rpm: 'Idle rpm' };
+const FALLBACK = `---\nboat:\nformer_names:\ncompany:\ndivision:\nofficial_number:\nhorsepower:\nsize:\nbuilt:\nbuilder:\nhome_port:\nengines:\nengine_model:\ngenerators:\ngenerator_model:\ngear:\ngear_make:\nwheels:\ngross_tons:\nnet_tons:\nfuel_capacity:\nlube_capacity:\nheight:\neye_level:\nhull_depth:\ntype:\ncontrols:\nrated_rpm:\nidle_rpm:\ndc_system:\nsteering:\nfuel_capacity_full:\nlast_updated:\n---\n\n# <boat name>\n\n## Quick facts\n\n## Open issues\n| Issue | Status | File |\n|---|---|---|\n\n## Things to know walking aboard\n\n## People / contacts\n`;
+const LABEL: Record<string, string> = {
+  ...SPEC_LABEL,
+  engines: 'Main engines, as on the spec sheet (e.g. P-CAT-3612-LH / S-CAT-3612-RH)',
+  engine_model: 'Main engine model, to group the fleet (e.g. CAT 3612)',
+  generator_model: 'Generator model, to group the fleet (e.g. CAT 3306)',
+  gear: 'Gear ratio and maker (e.g. 4.75:1 Reintjes)',
+  gear_make: 'Gear maker, to group the fleet (e.g. Reintjes)',
+  fuel_capacity_full: 'Usual fuel top-off (e.g. 91,500 gal)', dc_system: 'DC system', rated_rpm: 'Rated rpm', idle_rpm: 'Idle rpm',
+  spec_source: 'Where the specs came from (e.g. company spec sheet)',
+};
 
 export default function NewBoat() {
   const { corpus: c, store, save } = useKb();
