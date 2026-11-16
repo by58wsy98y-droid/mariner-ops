@@ -51,7 +51,7 @@ its edits are saved back into those same files as commits.
   *Add to timeline*, *Change status* and similar entries on any boat; **New troubleshooting entry** and **Add a boat** forms;
   **Fuel**: soundings in inches → gallons from the boat's tank tables, the fuel/lube/water chain and
   truck alerts like the workbook, saved to `fuel/log-YYYY-MM.md` and `.csv`; procedures with Print; documents.
-- **Edit and delete:** every page has **Edit** (details as boxes, the text as one big box) and **Delete**;
+- **Edit and delete** (switched off for now: `EDITING` in `src/kb/features.ts`): every page has **Edit** (details as boxes, the text as one big box) and **Delete**;
   boat pages have **Delete this boat**; fuel days, documents too. **Settings → All files** lists everything
   to edit, delete, or add a page to any folder. Deleted files stay in GitHub's history. If a file changed
   on another device while you edited it, both sets of changes are kept (yours win where the same lines changed).
@@ -65,7 +65,7 @@ its edits are saved back into those same files as commits.
 - **Maintenance procedure cards** (`towboat-kb/maintenance/`, one file per MPC): laid out and printed like the
   company's paper card, first in the Library and search, and on every boat page with that equipment
   (`equipment: gear` / `engine` / `generator`). **Follow tick by tick** ticks off each step with the time and
-  keeps the place on that phone; **Start over** for the next gear box.
+  keeps the place on that phone; **Done** at the bottom finishes the card and clears the ticks for next time.
 - **Tank tables for a new boat:** upload CSVs (`inches,gallons`) to `towboat-kb/boats/<boat>/fuel/tank-tables/`
   as `tank-2.csv`, `tank-3.csv`… (`tank-2p.csv` / `tank-2s.csv` if port and starboard differ).
 

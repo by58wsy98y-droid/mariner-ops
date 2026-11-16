@@ -15,6 +15,7 @@ import EditFile from './screens/EditFile';
 import Files from './screens/Files';
 import Fleet from './screens/Fleet';
 import { isKind } from './fleet';
+import { EDITING } from './features';
 
 export interface DocFile { path: string; size: number }
 export interface Kb {
@@ -85,8 +86,8 @@ export default function KbApp({ store, docsList }: { store: KbStore; docsList: D
   else if (screen === 'library') page = <Library />;
   else if (screen === 'docs') page = <Documents />;
   else if (screen === 'settings') page = <Settings />;
-  else if (screen === 'edit' && a) page = <EditFile key={[a, ...rest].join('/')} path={[a, ...rest].join('/')} />;
-  else if (screen === 'files') page = <Files />;
+  else if (EDITING && screen === 'edit' && a) page = <EditFile key={[a, ...rest].join('/')} path={[a, ...rest].join('/')} />;
+  else if (EDITING && screen === 'files') page = <Files />;
   else if (screen === 'fleet') page = <Fleet kind={isKind(a) ? a : undefined} model={isKind(a) && rest.length ? rest.join('/') : undefined} />;
   else page = <Home />;
   const tab = screen === 'library' || screen === 'docs' ? screen

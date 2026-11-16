@@ -52,15 +52,24 @@ export default function MpcCard({ c, doc }: { c: Corpus; doc: Doc }) {
     if (ticked[n]) delete ticked[n];
     else ticked[n] = new Date().toISOString();
     setRun({ ...run, ticked });
-    // bring the next open task up, just under the progress bar
+    setArmed(false);
+    if (!ticked[n]) return;
+    // bring the next open task up, just under the progress bar (or the Done button after the last one)
     const after = tasks.find((t) => !ticked[t]);
-    if (!ticked[n] || !after) return;
-    requestAnimationFrame(() => document.getElementById(`task-${after}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+    requestAnimationFrame(() => document.getElementById(after ? `task-${after}` : 'mpc-done')?.scrollIntoView({ behavior: 'smooth', block: after ? 'start' : 'center' }));
   };
-  const startOver = () => {
-    if (done && !confirm('Clear the ticks and start this card again (e.g. for the next gear box)?')) return;
-    setRun({ on: true, ticked: {} });
-    requestAnimationFrame(() => document.getElementById(`task-${tasks[0]}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+  // Done: the card is finished; the ticks clear so it starts fresh next time (e.g. the next gear box).
+  // With steps left unticked, the first tap says which and the second tap finishes anyway (no pop-up).
+  const [armed, setArmed] = useState(false);
+  const [finished, setFinished] = useState('');
+  const open = tasks.filter((n) => !run.ticked[n]);
+  const finish = () => {
+    if (open.length && !armed) { setArmed(true); return; }
+    const at = clock(new Date().toISOString());
+    setFinished(open.length ? `Finished at ${at}, with step${open.length > 1 ? 's' : ''} ${open.join(', ')} not ticked.` : `Finished at ${at}: all ${tasks.length} steps ticked.`);
+    setArmed(false);
+    setRun({ on: false, ticked: {} });
+    requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'smooth' }));
   };
 
   return (
@@ -70,7 +79,6 @@ export default function MpcCard({ c, doc }: { c: Corpus; doc: Doc }) {
         <div className="mpc-run-line">
           <b>{done === tasks.length ? `All ${tasks.length} steps done` : `${done} of ${tasks.length} done${next ? ` · next: step ${next}` : ''}`}</b>
           <span className="mpc-run-actions">
-            <button className="secondary small-btn" onClick={startOver}>Start over</button>
             <button className="secondary small-btn" onClick={() => setRun({ ...run, on: false })}>Stop</button>
           </span>
         </div>
@@ -78,7 +86,8 @@ export default function MpcCard({ c, doc }: { c: Corpus; doc: Doc }) {
       </div>
     ) : (
       <div className="actions no-print">
-        <button onClick={() => { setRun({ ...run, on: true }); if (next) requestAnimationFrame(() => document.getElementById(`task-${next}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })); }}>
+        {finished && <p className="small" role="status">{finished}</p>}
+        <button onClick={() => { setFinished(''); setRun({ ...run, on: true }); if (next) requestAnimationFrame(() => document.getElementById(`task-${next}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })); }}>
           {done ? `Carry on tick by tick (${done} of ${tasks.length} done)` : 'Follow tick by tick'}
         </button>
       </div>
@@ -129,6 +138,12 @@ export default function MpcCard({ c, doc }: { c: Corpus; doc: Doc }) {
         </section>
       ))}
     </div>
+    {run.on && tasks.length > 0 && (
+      <div className="mpc-finish no-print">
+        {armed && <p className="warnbox">Step{open.length > 1 ? 's' : ''} {open.join(', ')} {open.length > 1 ? "aren't" : "isn't"} ticked. Tap Done again to finish anyway.</p>}
+        <button id="mpc-done" className="big" onClick={finish}>{armed ? 'Done anyway' : 'Done'}</button>
+      </div>
+    )}
     </>
   );
 }

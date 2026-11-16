@@ -250,3 +250,4 @@ details summary { cursor: pointer; padding-block: 6px; }
 .mpc-task.done .mpc-task-body { opacity: 0.6; }
 .mpc-task.current { outline: 3px solid var(--accent-text); outline-offset: 1px; }
 .mpc-when { margin-left: auto; font-size: 13px; color: var(--muted); white-space: nowrap; }
+.mpc-finish { display: grid; gap: 8px; margin-top: 12px; scroll-margin-bottom: 96px; }

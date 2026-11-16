@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { parseFrontmatter } from '../frontmatter';
 import { parseMarkdown, inlineText } from '../markdown';
 import { fileHref } from '../Md';
+import { EDITING } from '../features';
 import { useKb } from '../KbApp';
 
 const size = (b: number) => (b > 1e6 ? `${(b / 1e6).toFixed(1)} MB` : `${Math.max(1, Math.round(b / 1e3))} KB`);
@@ -40,7 +41,7 @@ export default function Documents() {
                   <span className="docrow-meta"><span>{size(d.size)}</span>{a?.made && <span>{a.made}</span>}</span>
                   {a?.what && <span className="docrow-snip">{a.what}</span>}
                 </a>
-                <button className="secondary slim danger-text" onClick={() => { if (confirm(`Delete ${name}? GitHub keeps the history.`)) save({ kind: 'delete', path: d.path }, `delete ${name}`); }}>Delete</button>
+                {EDITING && <button className="secondary slim danger-text" onClick={() => { if (confirm(`Delete ${name}? GitHub keeps the history.`)) save({ kind: 'delete', path: d.path }, `delete ${name}`); }}>Delete</button>}
               </div>
             );
           })}

@@ -4,6 +4,7 @@ import { STATUSES } from '../edits';
 import { fmText } from '../frontmatter';
 import Md, { fileHref } from '../Md';
 import MpcCard from './MpcCard';
+import { EDITING } from '../features';
 import { go, useKb } from '../KbApp';
 import { DocRow, StatusPill, nowStamp } from './parts';
 
@@ -46,13 +47,13 @@ export default function DocPage({ path }: { path: string }) {
         {doc.type === 'issue' && <IssueActions key={doc.path} path={doc.path} status={doc.status} />}
         {doc.type === 'maintenance' ? <MpcCard c={c} doc={doc} /> : <Md c={c} from={doc.path} blocks={blocks} />}
         <div className="actions no-print">
-          <a className="button secondary" href={`#/edit/${encodeURI(doc.path)}`}>Edit</a>
+          {EDITING && <a className="button secondary" href={`#/edit/${encodeURI(doc.path)}`}>Edit</a>}
           <button className="secondary" onClick={() => window.print()}>Print</button>
-          <button className="secondary danger-text" onClick={() => {
+          {EDITING && <button className="secondary danger-text" onClick={() => {
             if (!confirm(`Delete “${doc.title}”? It's removed from GitHub too (GitHub keeps the history, so it can be brought back from there).`)) return;
             save({ kind: 'delete', path: doc.path }, `delete ${doc.path.split('/').pop()}`);
             go(doc.boat ? `#/boat/${doc.boat}` : '#/library');
-          }}>Delete</button>
+          }}>Delete</button>}
         </div>
       </section>
 

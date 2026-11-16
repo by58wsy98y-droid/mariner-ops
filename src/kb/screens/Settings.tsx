@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useKb } from '../KbApp';
+import { EDITING } from '../features';
 
 export default function Settings() {
   const { store } = useKb();
@@ -70,11 +71,11 @@ export default function Settings() {
         {!store.storageOk && <p className="warnbox">This browser isn't keeping changes (storage blocked or full). Keep the page open until they're saved.</p>}
       </section>
 
-      <section className="card">
+      {EDITING && <section className="card">
         <h2>All files</h2>
         <p className="small">See every file in the knowledge base, edit or delete what doesn't belong, or add a page to a folder.</p>
         <a className="button secondary" href="#/files">Open all files</a>
-      </section>
+      </section>}
 
       <section className="card">
         <h2>This copy</h2>

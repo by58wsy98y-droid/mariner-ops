@@ -1,5 +1,6 @@
 import { fmText } from '../frontmatter';
 import { isOpen, type Boat, type Corpus } from '../corpus';
+import { EDITING } from '../features';
 import { KINDS, SPEC_LABEL, cardsFor, fleetHref, groups, modelOf, spec } from '../fleet';
 import { section } from '../markdown';
 import Md, { docHref } from '../Md';
@@ -131,7 +132,7 @@ export default function BoatPage({ slug }: { slug: string }) {
 
 
 
-      <section className="card">
+      {EDITING && <section className="card">
         <h2>Files for this boat</h2>
         <div className="actions">
           <a className="button secondary" href="#/files">Edit or delete files</a>
@@ -142,7 +143,7 @@ export default function BoatPage({ slug }: { slug: string }) {
             go('#/');
           }}>Delete this boat</button>
         </div>
-      </section>
+      </section>}
     </div>
   );
 }

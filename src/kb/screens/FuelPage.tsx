@@ -5,6 +5,7 @@ import {
 import { docHref } from '../Md';
 import { useKb } from '../KbApp';
 import { today } from './parts';
+import { EDITING } from '../features';
 
 const gal = (x: number | null | undefined) => (x == null ? '—' : Math.round(x).toLocaleString('en-US'));
 const num = (s: string): number | null => { const t = s.replace(/,/g, '').trim(); return t === '' || isNaN(+t) ? null : +t; };
@@ -172,7 +173,7 @@ export default function FuelPage({ slug }: { slug: string }) {
         {calc.bad.length > 0 && <p className="warnbox">Past the end of the tank table: {calc.bad.join(', ')}. Check the sounding.</p>}
         {unread.length > 0 && <p className="warnbox">Can't read {unread.join(', ')}: type plain numbers, e.g. 90.5 for 90½.</p>}
         <button className="big" onClick={doSave} disabled={!canSave}>{saved ? `Save changes to ${date}` : `Save ${date}`}</button>
-        {saved && <button className="secondary danger-text" onClick={doDelete}>Delete this day</button>}
+        {EDITING && saved && <button className="secondary danger-text" onClick={doDelete}>Delete this day</button>}
         {msg && <p className="small" role="status">{msg}</p>}
       </section>
 
