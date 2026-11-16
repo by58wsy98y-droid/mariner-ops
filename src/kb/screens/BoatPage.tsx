@@ -1,7 +1,7 @@
 import { fmText } from '../frontmatter';
 import { isOpen, type Boat, type Corpus } from '../corpus';
 import { EDITING } from '../features';
-import { KINDS, SPEC_LABEL, cardsFor, fleetHref, groups, modelOf, spec } from '../fleet';
+import { KINDS, SPEC_LABEL, fleetHref, groups, modelOf, procedureFolders, proceduresFor, spec } from '../fleet';
 import { section } from '../markdown';
 import Md, { docHref } from '../Md';
 import { loggedDays } from '../fuel';
@@ -67,6 +67,7 @@ export default function BoatPage({ slug }: { slug: string }) {
   const systems = docs.filter((d) => d.type === 'system').sort((a, b) => a.title.localeCompare(b.title));
   const fuelDocs = docs.filter((d) => d.type === 'fuel');
   const know = section(boat.doc.blocks, /things to know walking aboard/i);
+  const procs = proceduresFor(boat, procedureFolders(c.boats, c.docs)); // General ones and those for its engine
   const days = loggedDays(store.view(), slug);
   const last = days[days.length - 1];
 
@@ -92,10 +93,10 @@ export default function BoatPage({ slug }: { slug: string }) {
         </div>
       </section>
 
-      {cardsFor(boat, c.docs).length > 0 && (
+      {procs.length > 0 && (
         <section className="card">
-          <h2>Maintenance cards <span className="count">{cardsFor(boat, c.docs).length}</span></h2>
-          <div className="list">{cardsFor(boat, c.docs).map((d) => <DocRow key={d.path} c={c} d={d} />)}</div>
+          <h2>Procedures <span className="count">{procs.length}</span></h2>
+          <div className="list">{procs.map((d) => <DocRow key={d.path} c={c} d={d} />)}</div>
         </section>
       )}
 

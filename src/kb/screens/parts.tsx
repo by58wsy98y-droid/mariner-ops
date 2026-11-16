@@ -1,6 +1,6 @@
 // Small pieces shared by the screens.
-import { boatName, statusWord, type Corpus, type Doc } from '../corpus';
-import { modelOf } from '../fleet';
+import { boatName, isCard, procedureFolder, statusWord, type Corpus, type Doc } from '../corpus';
+import { folderName, modelOf } from '../fleet';
 import { fmText } from '../frontmatter';
 import { docHref } from '../Md';
 
@@ -12,7 +12,7 @@ export function StatusPill({ status }: { status?: string }) {
 /** The main engine model of a boat, so a search result shows whether it came from a similar boat. */
 const engineOf = (c: Corpus, slug: string) => { const b = c.boats.find((x) => x.slug === slug); return b ? modelOf(b, 'engine') : ''; };
 
-export function DocRow({ c, d, snippet, showBoat = true }: { c: Corpus; d: Doc; snippet?: string; showBoat?: boolean }) {
+export function DocRow({ c, d, snippet, showBoat = true, showFolder = true }: { c: Corpus; d: Doc; snippet?: string; showBoat?: boolean; showFolder?: boolean }) {
   return (
     <a className="docrow" href={d.type === 'boat' && d.boat ? `#/boat/${d.boat}` : docHref(d.path)}>
       <span className="docrow-top">
@@ -21,7 +21,8 @@ export function DocRow({ c, d, snippet, showBoat = true }: { c: Corpus; d: Doc; 
       </span>
       <span className="docrow-meta">
         {showBoat && d.boat && <span className="chip">{boatName(c, d.boat)}{engineOf(c, d.boat) && <> · {engineOf(c, d.boat)}</>}</span>}
-        {d.type === 'maintenance' && <>{[d.fm.mpc_code, d.fm.frequency, d.fm.applies_to].map((v) => fmText(v)).filter(Boolean).map((v) => <span key={v}>{v}</span>)}</>}
+        {d.type === 'procedure' && showFolder && <span className="chip">{folderName(c.boats, procedureFolder(d.path))}</span>}
+        {isCard(d) && <>{[d.fm.mpc_code, d.fm.frequency].map((v) => fmText(v)).filter(Boolean).map((v) => <span key={v}>{v}</span>)}</>}
         {d.date && <span>{d.date}</span>}
         {d.system && <span>{d.system}</span>}
       </span>

@@ -5,9 +5,9 @@ import { parseMarkdown, type Block } from './markdown';
 
 export interface KbFile { path: string; text: string }
 
-export type DocType = 'boat' | 'system' | 'issue' | 'fuel' | 'procedure' | 'knowledge' | 'maintenance';
+export type DocType = 'boat' | 'system' | 'issue' | 'fuel' | 'procedure' | 'knowledge';
 export const TYPE_LABEL: Record<DocType, string> = {
-  boat: 'Boats', system: 'Systems', issue: 'Troubleshooting log', fuel: 'Fuel', procedure: 'Procedures', knowledge: 'Knowledge', maintenance: 'Maintenance cards',
+  boat: 'Boats', system: 'Systems', issue: 'Troubleshooting log', fuel: 'Fuel', procedure: 'Procedures', knowledge: 'Knowledge',
 };
 
 export interface Doc {
@@ -37,13 +37,16 @@ export function docType(path: string): DocType | null {
   if (/^boats\/[^/]+\/systems\/[^/]+\.md$/.test(path)) return 'system';
   if (/^boats\/[^/]+\/issues\/[^/]+\.md$/.test(path)) return 'issue';
   if (/^boats\/[^/]+\/fuel\/[^/]+\.md$/.test(path)) return 'fuel';
-  if (/^procedures\/[^/]+\.md$/.test(path) && !/README\.md$/.test(path)) return 'procedure';
+  if (/^procedures\/(?:[^/]+\/)?[^/]+\.md$/.test(path) && !/README\.md$/.test(path)) return 'procedure'; // procedures/<folder>/x.md
   if (/^knowledge\/[^/]+\.md$/.test(path) && !/README\.md$/.test(path)) return 'knowledge';
-  if (/^maintenance\/[^/]+\.md$/.test(path) && !/README\.md$/.test(path)) return 'maintenance';
   return null; // README, templates, app-spec, docs/ and CSV files aren't documents
 }
 
 export const boatOf = (path: string) => /^boats\/([^/]+)\//.exec(path)?.[1];
+/** The folder a procedure is filed in: procedures/<folder>/x.md ("general" for one directly in procedures/). */
+export const procedureFolder = (path: string) => /^procedures\/([^/]+)\/[^/]+\.md$/.exec(path)?.[1] ?? 'general';
+/** A maintenance procedure card (laid out like the company's paper card) rather than a plain page. */
+export const isCard = (d: Doc) => !!fmText(d.fm.mpc_code);
 export const fileName = (path: string) => path.split('/').pop() ?? path;
 
 export function makeDoc(path: string, text: string): Doc | null {

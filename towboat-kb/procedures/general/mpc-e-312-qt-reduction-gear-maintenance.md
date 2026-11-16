@@ -4,7 +4,6 @@ mpc_code: MPC-E-312-QT
 department: Engineering
 frequency: Quarterly
 applies_to: External Fwd/Aft Clutch Reduction Gear Boxes
-equipment: gear
 revision_date: 10/28/2022
 source: Marquette Transportation Co. Maintenance Procedure Card
 ---

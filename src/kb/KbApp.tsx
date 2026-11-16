@@ -83,7 +83,7 @@ export default function KbApp({ store, docsList }: { store: KbStore; docsList: D
   else if (screen === 'fuel' && a) page = <FuelPage slug={a} />;
   else if (screen === 'new-issue' && a) page = <NewIssue slug={a} />;
   else if (screen === 'new-boat') page = <NewBoat />;
-  else if (screen === 'library') page = <Library />;
+  else if (screen === 'library') page = <Library at={[a, ...rest].filter(Boolean)} />;
   else if (screen === 'docs') page = <Documents />;
   else if (screen === 'settings') page = <Settings />;
   else if (EDITING && screen === 'edit' && a) page = <EditFile key={[a, ...rest].join('/')} path={[a, ...rest].join('/')} />;

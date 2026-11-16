@@ -4,7 +4,7 @@ import { search } from '../search';
 import { useKb } from '../KbApp';
 import { DocRow } from './parts';
 
-const ORDER: DocType[] = ['maintenance', 'procedure', 'issue', 'system', 'knowledge', 'boat', 'fuel'];
+const ORDER: DocType[] = ['procedure', 'issue', 'system', 'knowledge', 'boat', 'fuel'];
 const SAVED = 'kb:lastSearch';
 const SAVED_TAGS = 'kb:lastTags';
 
