@@ -23,15 +23,15 @@ export default function NewIssue({ slug }: { slug: string }) {
       tags: f.tags.split(',').map((t) => t.trim()).filter(Boolean), reportedTo: f.reportedTo.trim(), symptoms: f.symptoms,
       firstEntry: f.what.trim() ? { when: f.when.trim(), what: f.what.trim() } : undefined,
     });
-    save({ kind: 'create', path, text }, `new issue: ${f.title.trim()}`);
+    save({ kind: 'create', path, text }, `troubleshooting: ${f.title.trim()}`);
     go(docHref(path));
   };
 
   return (
     <div className="screen">
       <section className="card">
-        <div className="crumbs"><a href={`#/boat/${slug}`}>{boat.name}</a> · New issue</div>
-        <h2 className="page-title">New issue</h2>
+        <div className="crumbs"><a href={`#/boat/${slug}`}>{boat.name}</a> · Troubleshooting log</div>
+        <h2 className="page-title">New troubleshooting entry</h2>
         <p className="small muted">Numbers over adjectives. Write down what was ruled out, not just what was found.</p>
         <label htmlFor="ni-title">Short title<input id="ni-title" value={f.title} onChange={(e) => set('title', e.target.value)} placeholder="Port main ramps itself up with the lever untouched" /></label>
         <label htmlFor="ni-system">System
@@ -50,7 +50,7 @@ export default function NewIssue({ slug }: { slug: string }) {
           <label htmlFor="ni-when">First timeline entry: when<input id="ni-when" value={f.when} onChange={(e) => set('when', e.target.value)} /></label>
           <label htmlFor="ni-what">What happened<input id="ni-what" value={f.what} onChange={(e) => set('what', e.target.value)} /></label>
         </div>
-        <button className="big" onClick={create} disabled={!f.title.trim()}>Create issue</button>
+        <button className="big" onClick={create} disabled={!f.title.trim()}>Add to the troubleshooting log</button>
       </section>
     </div>
   );

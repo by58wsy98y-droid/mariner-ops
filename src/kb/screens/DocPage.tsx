@@ -57,7 +57,7 @@ export default function DocPage({ path }: { path: string }) {
 
       {doc.type === 'issue' && (
         <section className="card no-print">
-          <h2>Similar issues</h2>
+          <h2>Similar troubleshooting on any boat</h2>
           {similar.length ? (
             <div className="list">
               {similar.map((s) => (
@@ -68,7 +68,7 @@ export default function DocPage({ path }: { path: string }) {
               ))}
             </div>
           ) : (
-            <p className="muted">No other issue shares a tag or the system with this one yet.</p>
+            <p className="muted">No other entry shares a tag or the system with this one yet.</p>
           )}
         </section>
       )}

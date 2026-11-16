@@ -46,8 +46,9 @@ Transportation Company's colors and logo (from marquettetrans.com); the logo fil
 The files in `towboat-kb/` are the source of truth (see `towboat-kb/README.md`); the app reads them, and
 its edits are saved back into those same files as commits.
 
-- **Search** across every boat; **boat pages** with open issues first; **issue pages** with
-  *Add to timeline*, *Change status* and similar issues; **New issue** and **Add a boat** forms;
+- **Search** across every boat (each result names its boat and engines); **boat pages** with the spec sheet
+  and that boat's **troubleshooting log** (its entries show only there and in search); entries with
+  *Add to timeline*, *Change status* and similar entries on any boat; **New troubleshooting entry** and **Add a boat** forms;
   **Fuel**: soundings in inches → gallons from the boat's tank tables, the fuel/lube/water chain and
   truck alerts like the workbook, saved to `fuel/log-YYYY-MM.md` and `.csv`; procedures with Print; documents.
 - **Edit and delete:** every page has **Edit** (details as boxes, the text as one big box) and **Delete**;

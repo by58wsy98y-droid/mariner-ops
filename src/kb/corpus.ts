@@ -7,7 +7,7 @@ export interface KbFile { path: string; text: string }
 
 export type DocType = 'boat' | 'system' | 'issue' | 'fuel' | 'procedure' | 'knowledge';
 export const TYPE_LABEL: Record<DocType, string> = {
-  boat: 'Boats', system: 'Systems', issue: 'Issues', fuel: 'Fuel', procedure: 'Procedures', knowledge: 'Knowledge',
+  boat: 'Boats', system: 'Systems', issue: 'Troubleshooting log', fuel: 'Fuel', procedure: 'Procedures', knowledge: 'Knowledge',
 };
 
 export interface Doc {
