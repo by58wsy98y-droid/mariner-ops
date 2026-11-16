@@ -16,7 +16,7 @@ export default function DocPage({ path }: { path: string }) {
     return (
       <section className="card">
         <h2>Not found</h2>
-        <p>There's no page at {path}. It may have been renamed. <a href="#/">Back to search</a></p>
+        <p>There's no page at {path}. It may have been renamed. <a href="#/search">Back to search</a></p>
       </section>
     );
   }

@@ -46,7 +46,7 @@ Transportation Company's colors and logo (from marquettetrans.com); the logo fil
 The files in `towboat-kb/` are the source of truth (see `towboat-kb/README.md`); the app reads them, and
 its edits are saved back into those same files as commits.
 
-- **Search** across every boat (each result names its boat and engines); **boat pages** with the spec sheet
+- Opens on the **Fleet** (a welcome page will take its place). **Search** across every boat (each result names its boat and engines); **boat pages** with the spec sheet
   and that boat's **troubleshooting log** (its entries show only there and in search); entries with
   *Add to timeline*, *Change status* and similar entries on any boat; **New troubleshooting entry** and **Add a boat** forms;
   **Fuel**: soundings in inches → gallons from the boat's tank tables, the fuel/lube/water chain and

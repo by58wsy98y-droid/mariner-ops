@@ -54,14 +54,7 @@ export default function Home() {
         ) : (
           <section className="card"><p>Nothing found for “{q}”{tags.length ? ` with ${tags.join(', ')}` : ''}. Try fewer words or a different spelling.</p></section>
         )
-      ) : (
-        <>
-          <section className="card">
-            <h2>Fleet <span className="count">{c.boats.length} boats</span></h2>
-            <a className="button" href="#/fleet">Open the fleet</a>
-          </section>
-        </>
-      )}
+      ) : null}
     </div>
   );
 }

@@ -88,12 +88,13 @@ export default function KbApp({ store, docsList }: { store: KbStore; docsList: D
   else if (screen === 'settings') page = <Settings />;
   else if (EDITING && screen === 'edit' && a) page = <EditFile key={[a, ...rest].join('/')} path={[a, ...rest].join('/')} />;
   else if (EDITING && screen === 'files') page = <Files />;
-  else if (screen === 'fleet') page = <Fleet kind={isKind(a) ? a : undefined} model={isKind(a) && rest.length ? rest.join('/') : undefined} />;
-  else page = <Home />;
+  else if (screen === 'search') page = <Home />;
+  else page = <Fleet kind={screen === 'fleet' && isKind(a) ? a : undefined} model={screen === 'fleet' && isKind(a) && rest.length ? rest.join('/') : undefined} />; // the fleet is where the app opens (a welcome page will go here)
   const tab = screen === 'library' || screen === 'docs' ? screen
     : (screen === 'doc' || screen === 'edit') && ['procedures', 'knowledge', 'maintenance'].includes(a) ? 'library'
     : screen === 'settings' || screen === 'files' ? 'settings'
-    : ['fleet', 'boat', 'fuel', 'new-issue', 'new-boat'].includes(screen) || ((screen === 'doc' || screen === 'edit') && a === 'boats') ? 'fleet' : 'home';
+    : screen === 'search' ? 'home'
+    : 'fleet'; // the fleet, boats and their pages (and the opening screen)
 
   return (
     <Ctx.Provider value={kb}>
@@ -116,7 +117,7 @@ export default function KbApp({ store, docsList }: { store: KbStore; docsList: D
         <nav>
           <div className="wrap">
             <button className={tab === 'fleet' ? 'on' : ''} onClick={() => go('#/fleet')}>Fleet</button>
-            <button className={tab === 'home' ? 'on' : ''} onClick={() => go('#/')}>Search</button>
+            <button className={tab === 'home' ? 'on' : ''} onClick={() => go('#/search')}>Search</button>
             <button className={tab === 'library' ? 'on' : ''} onClick={() => go('#/library')}>Library</button>
             <button className={tab === 'docs' ? 'on' : ''} onClick={() => go('#/docs')}>Docs</button>
             <button className={tab === 'settings' ? 'on' : ''} onClick={() => go('#/settings')}>Settings</button>

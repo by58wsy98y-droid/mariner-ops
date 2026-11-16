@@ -60,7 +60,7 @@ function SpecSheet({ c, boat }: { c: Corpus; boat: Boat }) {
 export default function BoatPage({ slug }: { slug: string }) {
   const { corpus: c, store, save } = useKb();
   const boat = c.boats.find((b) => b.slug === slug);
-  if (!boat) return <section className="card"><h2>Boat not found</h2><p>No boat called “{slug}”. <a href="#/">Back to search</a></p></section>;
+  if (!boat) return <section className="card"><h2>Boat not found</h2><p>No boat called “{slug}”. <a href="#/">Back to the fleet</a></p></section>;
   const docs = c.docs.filter((d) => d.boat === slug);
   const issues = docs.filter((d) => d.type === 'issue').sort((a, b) => (b.date ?? '').localeCompare(a.date ?? ''));
   const open = issues.filter(isOpen);
