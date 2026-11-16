@@ -1,11 +1,15 @@
 // Small pieces shared by the screens.
 import { boatName, statusWord, type Corpus, type Doc } from '../corpus';
+import { modelOf } from '../fleet';
 import { docHref } from '../Md';
 
 export function StatusPill({ status }: { status?: string }) {
   const w = statusWord(status);
   return <span className={`pill pill-${w.toLowerCase()}`}>{w}</span>;
 }
+
+/** The main engine model of a boat, so a search result shows whether it came from a similar boat. */
+const engineOf = (c: Corpus, slug: string) => { const b = c.boats.find((x) => x.slug === slug); return b ? modelOf(b, 'engine') : ''; };
 
 export function DocRow({ c, d, snippet, showBoat = true }: { c: Corpus; d: Doc; snippet?: string; showBoat?: boolean }) {
   return (
@@ -15,7 +19,7 @@ export function DocRow({ c, d, snippet, showBoat = true }: { c: Corpus; d: Doc; 
         <span className="docrow-title">{d.title}</span>
       </span>
       <span className="docrow-meta">
-        {showBoat && d.boat && <span className="chip">{boatName(c, d.boat)}</span>}
+        {showBoat && d.boat && <span className="chip">{boatName(c, d.boat)}{engineOf(c, d.boat) && <> · {engineOf(c, d.boat)}</>}</span>}
         {d.date && <span>{d.date}</span>}
         {d.system && <span>{d.system}</span>}
       </span>

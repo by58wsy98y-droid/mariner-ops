@@ -58,8 +58,16 @@ export function buildIndex(c: Corpus): Index {
   return { entries, tags };
 }
 
-function snippet(lines: string[], qs: string[]): string {
-  const hit = lines.find((l) => { const ts = terms(l); return qs.some((q) => ts.some((t) => t.startsWith(q))); }) ?? lines[0] ?? '';
+/** The line that matches the most search words (not the title again: it's already shown above it). */
+function snippet(lines: string[], qs: string[], title: string): string {
+  const t = title.trim().toLowerCase();
+  const rest = lines.filter((l) => l.trim().toLowerCase() !== t);
+  let hit = rest[0] ?? lines[0] ?? '', best = 0;
+  for (const l of rest) {
+    const ts = terms(l);
+    const n = qs.filter((q) => ts.some((x) => x.startsWith(q))).length;
+    if (n > best) { best = n; hit = l; }
+  }
   return hit.length > 180 ? hit.slice(0, 177) + '…' : hit;
 }
 
@@ -80,7 +88,7 @@ export function search(index: Index, query: string, tagFilter: string[] = []): H
       score += s;
     });
     if (!qs.length) score = 1; // tag filter only
-    if (all && score > 0) out.push({ doc: e.doc, score, snippet: snippet(e.lines, qs) });
+    if (all && score > 0) out.push({ doc: e.doc, score, snippet: snippet(e.lines, qs, e.doc.title) });
   }
   return out.sort((a, b) => b.score - a.score);
 }

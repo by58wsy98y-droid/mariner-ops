@@ -37,6 +37,16 @@ describe('fleet', () => {
     expect(hits('1272284')).toEqual(['chad-pregracke']);
   });
 
+  it("one boat's issue is found by a search from anywhere, with the line that matched", () => {
+    const withIssue = buildCorpus([
+      ...[...c.files].map(([path, text]) => ({ path, text })),
+      { path: 'boats/chad-pregracke/issues/2026-11-10-port-main-ramping.md', text: '---\nboat: M/V Chad Pregracke\ntitle: Port main ramping at idle\nstatus: RESOLVED\n---\n# Port main ramping at idle\n\n## Resolution\nFork terminal on the ECM ground was loose.\n' },
+    ]);
+    const [hit] = search(buildIndex(withIssue), 'ramping ground');
+    expect(hit.doc.boat).toBe('chad-pregracke');
+    expect(hit.snippet).toBe('Fork terminal on the ECM ground was loose.');
+  });
+
   it('a model with spaces and brackets survives the link', () => {
     expect(decodeURIComponent(fleetHref('generator', 'Cummins 6CTA8.3D (M)').split('/').pop()!)).toBe('Cummins 6CTA8.3D (M)');
   });

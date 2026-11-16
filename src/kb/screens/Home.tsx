@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { TYPE_LABEL, isOpen, type DocType } from '../corpus';
+import { TYPE_LABEL, type DocType } from '../corpus';
 import { search } from '../search';
 import { useKb } from '../KbApp';
 import { DocRow } from './parts';
@@ -24,7 +24,6 @@ export default function Home() {
   for (const d of c.docs) for (const t of d.tags) tagCounts.set(t, (tagCounts.get(t) ?? 0) + 1);
   const sortedTags = [...tagCounts].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).map(([t]) => t);
   const topTags = allTags ? sortedTags : [...new Set([...tags, ...sortedTags.slice(0, 10)])];
-  const open = c.docs.filter(isOpen).sort((a, b) => (b.date ?? '').localeCompare(a.date ?? ''));
 
   return (
     <div className="screen">
@@ -32,7 +31,8 @@ export default function Home() {
         <label htmlFor="q">Search every boat
           <input id="q" type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="ramping, fork terminal, gravitate…" autoComplete="off" autoFocus />
         </label>
-        <div className="chips" aria-label="Filter by tag">
+        <p className="small muted">Finds what was found and fixed on any boat, plus procedures and notes. Each result shows the boat it came from and its engines.</p>
+        {topTags.length > 0 && <div className="chips" aria-label="Filter by tag">
           {topTags.map((t) => (
             <button key={t} className={`chip-btn${tags.includes(t) ? ' on' : ''}`} onClick={() => setTags(tags.includes(t) ? tags.filter((x) => x !== t) : [...tags, t])}>
               {t}
@@ -41,7 +41,7 @@ export default function Home() {
           {sortedTags.length > 10 && (
             <button className="chip-btn more" onClick={() => setAllTags(!allTags)}>{allTags ? 'Fewer tags' : `All ${sortedTags.length} tags`}</button>
           )}
-        </div>
+        </div>}
       </section>
 
       {searching ? (
@@ -63,11 +63,6 @@ export default function Home() {
               {fleetGroups(c.boats, 'engine').map((g) => <a key={g.model} className="chip-btn" href={fleetHref('engine', g.model)}>{g.model} · {g.boats.length}</a>)}
             </div>
             <a className="button" href="#/fleet">Open the fleet</a>
-          </section>
-          <section className="card">
-            <h2>Open issues, all boats</h2>
-            <div className="list">{open.map((d) => <DocRow key={d.path} c={c} d={d} />)}</div>
-            {!open.length && <p className="muted">No open issues.</p>}
           </section>
         </>
       )}
