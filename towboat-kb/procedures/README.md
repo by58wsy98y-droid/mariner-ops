@@ -12,7 +12,7 @@ procedures/
   generators/
     cat-3306/           one folder per generator model, named like the boats' generator_model,
     john-deere-6090/      shown on the boats with that generator
-    cummins-6cta8-3d-m/
+    cummins/
 ```
 
 A card's fields at the top (MPC code, frequency, revision date, what it applies to) show as its header.

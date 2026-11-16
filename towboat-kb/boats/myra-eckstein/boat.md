@@ -11,7 +11,7 @@ home_port: St. Louis, Missouri, USA
 engines: P-CAT-3612-LH / S-CAT-3612-RH
 engine_model: CAT 3612
 generators: Cummins 6CTA8.3D (M)
-generator_model: Cummins 6CTA8.3D (M)
+generator_model: Cummins
 gear: 4.229:1 Falk
 gear_make: Falk
 wheels: 2-114x113.75
