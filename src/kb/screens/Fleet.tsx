@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { isOpen } from '../corpus';
-import { KINDS, boatMatches, fleetHref, groups, modelOf, sortBoats, spec, type Kind } from '../fleet';
+import { KINDS, boatMatches, modelOf, sortBoats, spec, type Kind } from '../fleet';
 import { useKb } from '../KbApp';
 
 export default function Fleet({ kind, model }: { kind?: Kind; model?: string }) {
@@ -14,23 +14,8 @@ export default function Fleet({ kind, model }: { kind?: Kind; model?: string }) 
       <section className="card">
         <h2 className="page-title">Fleet <span className="count">{c.boats.length} boats</span></h2>
         <label htmlFor="fleet-q">Find a boat
-          <input id="fleet-q" type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Name, former name or official number" autoComplete="off" />
+          <input id="fleet-q" type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search" autoComplete="off" />
         </label>
-        {KINDS.map((k) => {
-          const gs = groups(c.boats, k.kind);
-          if (!gs.length) return null;
-          return (
-            <div key={k.kind} className="fleet-filter">
-              <span className="fleet-filter-label">{k.label}</span>
-              <div className="chips">
-                {gs.map((g) => {
-                  const on = kind === k.kind && model === g.model;
-                  return <a key={g.model} className={`chip-btn${on ? ' on' : ''}`} href={on ? '#/fleet' : fleetHref(k.kind, g.model)}>{g.model} · {g.boats.length}</a>;
-                })}
-              </div>
-            </div>
-          );
-        })}
       </section>
 
       <section className="card">
