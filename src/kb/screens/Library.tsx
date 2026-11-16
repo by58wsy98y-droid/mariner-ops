@@ -1,6 +1,6 @@
-// The Library: folders. Procedures → General equipment, then one folder per main engine model in the
-// fleet → the procedures and maintenance cards filed there.
-import { procedureFolders } from '../fleet';
+// The Library: folders. Procedures → General equipment, one folder per main engine model in the fleet,
+// and Generators → one folder per generator model → the procedures and maintenance cards filed there.
+import { allDocs, findFolder, procedureFolders, type Folder } from '../fleet';
 import { useKb } from '../KbApp';
 import { DocRow } from './parts';
 
@@ -15,23 +15,37 @@ function FolderRow({ href, name, note, count }: { href: string; name: string; no
   );
 }
 
+const boatsNote = (n: number) => (n ? `${n} boat${n > 1 ? 's' : ''}` : undefined);
+
 export default function Library({ at }: { at: string[] }) {
   const { corpus: c } = useKb();
   const folders = procedureFolders(c.boats, c.docs);
-  const [section, folder] = at;
-  const total = folders.reduce((n, f) => n + f.docs.length, 0);
+  const [section, ...inside] = at;
+  const path = inside.join('/');
+  const total = folders.reduce((n, f) => n + allDocs(f).length, 0);
+  const row = (f: Folder) => (
+    <FolderRow key={f.slug} href={`#/library/procedures/${f.slug}`} name={f.name} count={allDocs(f).length}
+      note={f.slug === 'general' ? 'Every boat' : f.children ? `${f.children.length} model${f.children.length === 1 ? '' : 's'}` : boatsNote(f.boats.length)} />
+  );
 
-  if (section === 'procedures' && folder) {
-    const f = folders.find((x) => x.slug === folder);
+  if (section === 'procedures' && path) {
+    const f = findFolder(folders, path);
+    // the folders above this one, for the line back up
+    const above = inside.slice(0, -1).map((_, i) => findFolder(folders, inside.slice(0, i + 1).join('/'))).filter((x): x is Folder => !!x);
     return (
       <div className="screen">
         <section className="card">
-          <div className="crumbs"><a href="#/library">Library</a> · <a href="#/library/procedures">Procedures</a></div>
-          <h2 className="page-title">{f?.name ?? folder}</h2>
-          {f && f.slug === 'general' && <p className="small muted">Equipment every boat has. These show on every boat's page.</p>}
-          {f && f.slug !== 'general' && f.boats.length > 0 && <p className="small muted">On {f.boats.length} boat{f.boats.length > 1 ? 's' : ''}: {f.boats.map((b) => b.name.replace(/^M\/V\s+/, '')).join(', ')}.</p>}
-          <div className="list">{(f?.docs ?? []).map((d) => <DocRow key={d.path} c={c} d={d} showFolder={false} />)}</div>
-          {!f?.docs.length && <p className="muted">No procedures in this folder yet.</p>}
+          <div className="crumbs">
+            <a href="#/library">Library</a> · <a href="#/library/procedures">Procedures</a>
+            {above.map((x) => <span key={x.slug}> · <a href={`#/library/procedures/${x.slug}`}>{x.name}</a></span>)}
+          </div>
+          <h2 className="page-title">{f?.name ?? path}</h2>
+          {f?.slug === 'general' && <p className="small muted">Equipment every boat has. These show on every boat's page.</p>}
+          {f && f.slug !== 'general' && !f.children && f.boats.length > 0 && <p className="small muted">On {f.boats.length} boat{f.boats.length > 1 ? 's' : ''}: {f.boats.map((b) => b.name.replace(/^M\/V\s+/, '')).join(', ')}.</p>}
+          {f?.children && <div className="folders">{f.children.map(row)}</div>}
+          {(f?.docs.length ?? 0) > 0 && <div className="list">{f!.docs.map((d) => <DocRow key={d.path} c={c} d={d} showFolder={false} />)}</div>}
+          {f && !f.children && !f.docs.length && <p className="muted">No procedures in this folder yet.</p>}
+          {!f && <p className="muted">There's no folder called {path}.</p>}
         </section>
       </div>
     );
@@ -43,12 +57,7 @@ export default function Library({ at }: { at: string[] }) {
         <section className="card">
           <div className="crumbs"><a href="#/library">Library</a></div>
           <h2 className="page-title">Procedures</h2>
-          <div className="folders">
-            {folders.map((f) => (
-              <FolderRow key={f.slug} href={`#/library/procedures/${f.slug}`} name={f.name} count={f.docs.length}
-                note={f.slug === 'general' ? 'Every boat' : f.boats.length ? `${f.boats.length} boat${f.boats.length > 1 ? 's' : ''}` : undefined} />
-            ))}
-          </div>
+          <div className="folders">{folders.map(row)}</div>
         </section>
       </div>
     );
@@ -59,7 +68,7 @@ export default function Library({ at }: { at: string[] }) {
       <section className="card">
         <h2 className="page-title">Library</h2>
         <div className="folders">
-          <FolderRow href="#/library/procedures" name="Procedures" note="General equipment, and a folder for each engine" count={total} />
+          <FolderRow href="#/library/procedures" name="Procedures" note="General equipment, main engines and generators" count={total} />
         </div>
       </section>
     </div>

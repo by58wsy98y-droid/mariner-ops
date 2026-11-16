@@ -15,6 +15,7 @@ boats/<boat-name>/
 procedures/               step-by-step procedures and maintenance cards, in folders:
   general/                  equipment every boat has
   <engine-model>/           one folder per main engine model (e.g. cat-3612/)
+  generators/<model>/       one folder per generator model (e.g. generators/cat-3306/)
 templates/                blank forms for a new boat, issue or procedure
 docs/                     finished deliverables: spreadsheets, forms, guides, photos
 app-spec.md               the prompt for building the app on top of these files

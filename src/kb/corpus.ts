@@ -37,14 +37,14 @@ export function docType(path: string): DocType | null {
   if (/^boats\/[^/]+\/systems\/[^/]+\.md$/.test(path)) return 'system';
   if (/^boats\/[^/]+\/issues\/[^/]+\.md$/.test(path)) return 'issue';
   if (/^boats\/[^/]+\/fuel\/[^/]+\.md$/.test(path)) return 'fuel';
-  if (/^procedures\/(?:[^/]+\/)?[^/]+\.md$/.test(path) && !/README\.md$/.test(path)) return 'procedure'; // procedures/<folder>/x.md
+  if (/^procedures\/(?:[^/]+\/){0,2}[^/]+\.md$/.test(path) && !/README\.md$/.test(path)) return 'procedure'; // procedures/<folder>[/<folder>]/x.md
   if (/^knowledge\/[^/]+\.md$/.test(path) && !/README\.md$/.test(path)) return 'knowledge';
   return null; // README, templates, app-spec, docs/ and CSV files aren't documents
 }
 
 export const boatOf = (path: string) => /^boats\/([^/]+)\//.exec(path)?.[1];
 /** The folder a procedure is filed in: procedures/<folder>/x.md ("general" for one directly in procedures/). */
-export const procedureFolder = (path: string) => /^procedures\/([^/]+)\/[^/]+\.md$/.exec(path)?.[1] ?? 'general';
+export const procedureFolder = (path: string) => /^procedures\/(.+)\/[^/]+\.md$/.exec(path)?.[1] ?? 'general'; // e.g. "generators/cat-3306"
 /** A maintenance procedure card (laid out like the company's paper card) rather than a plain page. */
 export const isCard = (d: Doc) => !!fmText(d.fm.mpc_code);
 export const fileName = (path: string) => path.split('/').pop() ?? path;

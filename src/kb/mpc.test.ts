@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildCorpus, docType, isCard, procedureFolder } from './corpus';
-import { folderName, procedureFolders, proceduresFor } from './fleet';
+import { allDocs, findFolder, folderName, procedureFolders, proceduresFor } from './fleet';
 import { parseInline, parseMarkdown } from './markdown';
 import { buildIndex, search } from './search';
 
@@ -9,10 +9,11 @@ const boat = (slug: string, fm: string) => ({ path: `boats/${slug}/boat.md`, tex
 const c = buildCorpus([
   { path: 'procedures/general/mpc-e-312-qt-reduction-gear-maintenance.md', text: card },
   { path: 'procedures/cat-3612/valve-lash.md', text: '---\ntitle: Valve lash check\n---\n# Valve lash check\n' },
+  { path: 'procedures/generators/cat-3306/oil-change.md', text: '---\ntitle: Generator oil change\n---\n# Generator oil change\n' },
   { path: 'procedures/README.md', text: '# Procedures' },
-  boat('kay', 'engine_model: CAT 3612'),
-  boat('ray', 'engine_model: CAT 3612'),
-  boat('chad', 'engine_model: EMD 20-710G7C-T3'),
+  boat('kay', 'engine_model: CAT 3612\ngenerator_model: CAT 3306'),
+  boat('ray', 'engine_model: CAT 3612\ngenerator_model: CAT 3306'),
+  boat('chad', 'engine_model: EMD 20-710G7C-T3\ngenerator_model: John Deere 6090'),
 ]);
 
 describe('procedures in folders', () => {
@@ -20,24 +21,31 @@ describe('procedures in folders', () => {
     expect(docType('procedures/general/mpc-e-312-qt-reduction-gear-maintenance.md')).toBe('procedure');
     expect(docType('procedures/README.md')).toBeNull();
     expect(procedureFolder('procedures/cat-3612/valve-lash.md')).toBe('cat-3612');
+    expect(procedureFolder('procedures/generators/cat-3306/oil-change.md')).toBe('generators/cat-3306');
     expect(isCard(c.docs.find((d) => d.path.includes('mpc-e-312'))!)).toBe(true);
     expect(isCard(c.docs.find((d) => d.path.includes('valve-lash'))!)).toBe(false);
   });
 
-  it('folders: General equipment first, then one per engine model in the fleet (empty ones too)', () => {
+  it('folders: General equipment, one per engine model in the fleet (empty ones too), then Generators → one per model', () => {
     const fs = procedureFolders(c.boats, c.docs);
-    expect(fs.map((f) => [f.slug, f.name, f.docs.length, f.boats.length])).toEqual([
+    expect(fs.map((f) => [f.slug, f.name, allDocs(f).length, f.boats.length])).toEqual([
       ['general', 'General equipment', 1, 3],
       ['cat-3612', 'CAT 3612', 1, 2],
       ['emd-20-710g7c-t3', 'EMD 20-710G7C-T3', 0, 1],
+      ['generators', 'Generators', 1, 3],
+    ]);
+    expect(findFolder(fs, 'generators')!.children!.map((f) => [f.slug, f.name, f.docs.length])).toEqual([
+      ['generators/cat-3306', 'CAT 3306', 1],
+      ['generators/john-deere-6090', 'John Deere 6090', 0],
     ]);
     expect(folderName(c.boats, 'cat-3612')).toBe('CAT 3612');
+    expect(folderName(c.boats, 'generators/cat-3306')).toBe('CAT 3306');
   });
 
-  it('a boat gets the General procedures and those for its engine', () => {
+  it('a boat gets the General procedures and those for its engine and its generators', () => {
     const fs = procedureFolders(c.boats, c.docs);
     const titles = (slug: string) => proceduresFor(c.boats.find((b) => b.slug === slug)!, fs).map((d) => d.title);
-    expect(titles('kay')).toEqual(['Reduction Gear Maintenance', 'Valve lash check']);
+    expect(titles('kay')).toEqual(['Reduction Gear Maintenance', 'Valve lash check', 'Generator oil change']);
     expect(titles('chad')).toEqual(['Reduction Gear Maintenance']);
   });
 

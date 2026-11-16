@@ -5,10 +5,14 @@ folders:
 
 ```
 procedures/
-  general/            equipment every boat has (e.g. reduction gear maintenance), shown on every boat
-  cat-3612/           one folder per main engine model, named like the boats' engine_model
-  emd-20-710g7c-t3/     (CAT 3612 -> cat-3612), shown on the boats with that engine
+  general/              equipment every boat has (e.g. reduction gear maintenance), shown on every boat
+  cat-3612/             one folder per main engine model, named like the boats' engine_model
+  emd-20-710g7c-t3/       (CAT 3612 -> cat-3612), shown on the boats with that engine
   emd-12-710/
+  generators/
+    cat-3306/           one folder per generator model, named like the boats' generator_model,
+    john-deere-6090/      shown on the boats with that generator
+    cummins-6cta8-3d-m/
 ```
 
 A card's fields at the top (MPC code, frequency, revision date, what it applies to) show as its header.

@@ -51,23 +51,47 @@ export function boatMatches(b: Boat, q: string): boolean {
 
 export const fleetHref = (kind: Kind, model: string) => `#/fleet/${kind}/${encodeURIComponent(model)}`;
 
-/** Procedure folders: General equipment, then one per main engine model in the fleet, then any others. */
-export interface Folder { slug: string; name: string; boats: Boat[]; docs: Doc[] }
+/**
+ * Procedure folders: General equipment, one per main engine model in the fleet, then Generators with one
+ * folder per generator model inside (procedures/generators/cat-3306/), then any other folder found.
+ */
+export interface Folder { slug: string; name: string; boats: Boat[]; docs: Doc[]; children?: Folder[] }
 const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+const unknownName = (f: string) => f.split('/').pop()!.replace(/-/g, ' ').toUpperCase();
+
 export function procedureFolders(boats: Boat[], docs: Doc[]): Folder[] {
   const procs = docs.filter((d) => d.type === 'procedure');
   const inFolder = (f: string) => procs.filter((d) => procedureFolder(d.path) === f).sort((a, b) => fmText(a.fm.mpc_code).localeCompare(fmText(b.fm.mpc_code)) || a.title.localeCompare(b.title));
-  const folders: Folder[] = [{ slug: 'general', name: 'General equipment', boats, docs: inFolder('general') }];
-  for (const g of groups(boats, 'engine')) folders.push({ slug: slug(g.model), name: g.model, boats: g.boats, docs: inFolder(slug(g.model)) });
+  const make = (f: string, name: string, bs: Boat[]): Folder => ({ slug: f, name, boats: bs, docs: inFolder(f) });
+  const folders: Folder[] = [make('general', 'General equipment', boats)];
+  for (const g of groups(boats, 'engine')) folders.push(make(slug(g.model), g.model, g.boats));
+  const gens = groups(boats, 'generator').map((g) => make(`generators/${slug(g.model)}`, g.model, g.boats));
+  for (const f of new Set(procs.map((d) => procedureFolder(d.path)).filter((f) => f.startsWith('generators/'))))
+    if (!gens.some((x) => x.slug === f)) gens.push(make(f, unknownName(f), []));
+  folders.push({ slug: 'generators', name: 'Generators', boats: [...new Set(gens.flatMap((g) => g.boats))], docs: inFolder('generators'), children: gens });
   for (const f of new Set(procs.map((d) => procedureFolder(d.path))))
-    if (!folders.some((x) => x.slug === f)) folders.push({ slug: f, name: f.replace(/-/g, ' ').toUpperCase(), boats: [], docs: inFolder(f) });
+    if (!findFolder(folders, f)) folders.push(make(f, unknownName(f), []));
   return folders;
 }
 
-/** Procedures for a boat: the General ones and those for its main engine. */
-export function proceduresFor(b: Boat, folders: Folder[]): Doc[] {
-  return folders.filter((f) => f.slug === 'general' || f.boats.includes(b)).flatMap((f) => f.docs);
+/** A folder by its path ("generators/cat-3306"), at any depth. */
+export function findFolder(folders: Folder[], f: string): Folder | undefined {
+  for (const x of folders) {
+    if (x.slug === f) return x;
+    const inner = x.children && findFolder(x.children, f);
+    if (inner) return inner;
+  }
+  return undefined;
 }
 
-/** "general" -> "General equipment", "cat-3612" -> "CAT 3612" (the engine model it was named from). */
-export const folderName = (boats: Boat[], f: string) => procedureFolders(boats, []).find((x) => x.slug === f)?.name ?? f.replace(/-/g, ' ').toUpperCase();
+/** Everything filed in a folder and the folders inside it. */
+export const allDocs = (f: Folder): Doc[] => [...f.docs, ...(f.children ?? []).flatMap(allDocs)];
+
+/** Procedures for a boat: the General ones, and those for its main engine and its generators. */
+export function proceduresFor(b: Boat, folders: Folder[]): Doc[] {
+  const mine = (fs: Folder[]): Doc[] => fs.flatMap((f) => [...(f.slug === 'general' || (!f.children && f.boats.includes(b)) ? f.docs : []), ...mine(f.children ?? [])]);
+  return mine(folders);
+}
+
+/** "general" -> "General equipment", "cat-3612" -> "CAT 3612", "generators/cat-3306" -> "CAT 3306". */
+export const folderName = (boats: Boat[], f: string) => findFolder(procedureFolders(boats, []), f)?.name ?? unknownName(f);

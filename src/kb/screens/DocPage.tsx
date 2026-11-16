@@ -33,7 +33,11 @@ export default function DocPage({ path }: { path: string }) {
           {doc.type === 'procedure' ? (
             <>
               <span> · </span><a href="#/library/procedures">Procedures</a>
-              <span> · </span><a href={`#/library/procedures/${procedureFolder(doc.path)}`}>{folderName(c.boats, procedureFolder(doc.path))}</a>
+              {/* each folder on the way down, e.g. Generators · CAT 3306 */}
+              {procedureFolder(doc.path).split('/').map((_, i, parts) => {
+                const f = parts.slice(0, i + 1).join('/');
+                return <span key={f}> · <a href={`#/library/procedures/${f}`}>{folderName(c.boats, f)}</a></span>;
+              })}
             </>
           ) : <span> · {TYPE_LABEL[doc.type]}</span>}
         </div>
