@@ -62,6 +62,10 @@ its edits are saved back into those same files as commits.
 - **iPhone:** add it to the home screen first and use it only from the icon, and paste the key there. The
   icon keeps its own copy, separate from Safari tabs (changes typed in a tab stay in that tab).
 - **Fuel:** correcting, adding or deleting an earlier day works the next day's Used out again.
+- **Maintenance procedure cards** (`towboat-kb/maintenance/`, one file per MPC): laid out and printed like the
+  company's paper card, first in the Library and search, and on every boat page with that equipment
+  (`equipment: gear` / `engine` / `generator`). **Follow tick by tick** ticks off each step with the time and
+  keeps the place on that phone; **Start over** for the next gear box.
 - **Tank tables for a new boat:** upload CSVs (`inches,gallons`) to `towboat-kb/boats/<boat>/fuel/tank-tables/`
   as `tank-2.csv`, `tank-3.csv`… (`tank-2p.csv` / `tank-2s.csv` if port and starboard differ).
 

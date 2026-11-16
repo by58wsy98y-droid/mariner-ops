@@ -236,3 +236,17 @@ details summary { cursor: pointer; padding-block: 6px; }
   .mpc-task-head { break-after: avoid; }
   .md figure img { max-height: 2.3in; width: auto; }
 }
+
+/* Following a card tick by tick */
+.mpc-run { position: sticky; top: 0; z-index: 4; display: grid; gap: 6px; margin: 0 -2px; padding: 10px 12px; background: var(--card); border: 2px solid var(--ink); border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12); }
+.mpc-run-line { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+.mpc-run-actions { display: flex; gap: 6px; }
+.mpc-progress { height: 6px; border-radius: 3px; background: var(--field); overflow: hidden; }
+.mpc-progress span { display: block; height: 100%; background: var(--accent); transition: width 0.2s; }
+.mpc-task { scroll-margin-top: 116px; }
+.mpc-tick { min-height: 44px; min-width: 44px; padding: 0; margin: -6px 0; font-size: 28px; line-height: 1; background: var(--card); color: var(--ink); border: 2px solid var(--ink); border-radius: 8px; }
+.mpc-task.done .mpc-tick { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.mpc-task.done .mpc-task-head b { text-decoration: line-through; color: var(--muted); }
+.mpc-task.done .mpc-task-body { opacity: 0.6; }
+.mpc-task.current { outline: 3px solid var(--accent-text); outline-offset: 1px; }
+.mpc-when { margin-left: auto; font-size: 13px; color: var(--muted); white-space: nowrap; }
