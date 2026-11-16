@@ -38,9 +38,11 @@ Move a log between devices or versions with Backup → Restore.
 On iPhone, add it to the home screen first and use it only from the icon: the icon keeps its own copy of
 the log, and Safari can erase a site's data in a tab after a week unused.
 
-## Towboat Knowledge Base
+## Marquette Engineering Knowledge Base
 **https://by58wsy98y-droid.github.io/mariner-ops/kb/** (public, like the rest of this repository).
-A searchable record of boats, their systems, issues and how they were solved, fuel logs and procedures.
+The engineering department's record of the fleet (each boat's spec sheet, grouped by engine, generator and
+gear model), systems, issues and how they were solved, fuel logs, procedures and checklists. Marquette
+Transportation Company's colors and logo (from marquettetrans.com); the logo files are in `public-site/kb/`.
 The files in `towboat-kb/` are the source of truth (see `towboat-kb/README.md`); the app reads them, and
 its edits are saved back into those same files as commits.
 

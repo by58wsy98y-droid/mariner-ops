@@ -12,15 +12,20 @@ const LABELS: Record<string, string> = {
   fuel_capacity_full: 'Usual fuel top-off', fuel_capacity_gal: 'Capacity for truck alerts (gal)', truck_load_gal: 'Truck load (gal)',
 };
 // shown elsewhere on the page (the spec sheet, the title, the footer line)
-const SHOWN = new Set(['boat', 'company', 'division', 'spec_source', 'last_updated', ...Object.keys(SPEC_LABEL)]);
+const SHOWN = new Set(['boat', 'division', 'spec_source', 'last_updated', ...Object.keys(SPEC_LABEL)]);
+// every boat here is Marquette's: the company line only shows when it says something else
+const hidden = (k: string, v: string) => SHOWN.has(k) || (k === 'company' && /^marquette\b/i.test(v.trim()));
 const STATS = ['gross_tons', 'net_tons', 'fuel_capacity', 'lube_capacity', 'height', 'eye_level', 'hull_depth'];
 
 /** The company spec sheet: size and build up top, the machinery, then tonnage, capacities and air draft. */
 function SpecSheet({ c, boat }: { c: Corpus; boat: Boat }) {
   const v = (k: string) => spec(boat, k);
   const built = [v('built') && `Built ${v('built')}`, v('builder') && `${v('built') ? 'at' : 'Built at'} ${v('builder')}`].filter(Boolean).join(' ');
-  const head = [v('horsepower') && `${v('horsepower')} HP`, v('size') && `${v('size')} ft`, built, v('official_number') && `Official no. ${v('official_number')}`, v('home_port')].filter(Boolean);
-  const rows = [...KINDS.map((k) => ({ label: SPEC_LABEL[k.printed], text: v(k.printed), kind: k.kind })), { label: 'Wheels', text: v('wheels'), kind: undefined }].filter((r) => r.text);
+  const head = [v('horsepower') && `${v('horsepower')} HP`, v('size') && `${v('size')} ft`, built, v('official_number') && `Official no. ${v('official_number')}`, v('home_port'), v('division')].filter(Boolean);
+  const rows = [
+    ...KINDS.map((k) => ({ label: SPEC_LABEL[k.printed], text: v(k.printed) || modelOf(boat, k.kind), kind: k.kind })),
+    { label: 'Wheels', text: v('wheels'), kind: undefined },
+  ].filter((r) => r.text);
   const stats = STATS.filter((k) => v(k));
   return (
     <div className="spec">
@@ -70,9 +75,9 @@ export default function BoatPage({ slug }: { slug: string }) {
         <h2 className="page-title">{boat.name}</h2>
         {spec(boat, 'former_names') && <p className="muted">Formerly {spec(boat, 'former_names')}</p>}
         <SpecSheet c={c} boat={boat} />
-        {Object.entries(boat.doc.fm).some(([k, v]) => !SHOWN.has(k) && fmText(v)) && (
+        {Object.entries(boat.doc.fm).some(([k, v]) => !hidden(k, fmText(v)) && fmText(v)) && (
           <dl className="profile">
-            {Object.entries(boat.doc.fm).filter(([k, v]) => !SHOWN.has(k) && fmText(v)).map(([k, v]) => (
+            {Object.entries(boat.doc.fm).filter(([k, v]) => !hidden(k, fmText(v)) && fmText(v)).map(([k, v]) => (
               <div key={k}><dt>{LABELS[k] ?? k.replace(/_/g, ' ')}</dt><dd>{fmText(v)}</dd></div>
             ))}
           </dl>

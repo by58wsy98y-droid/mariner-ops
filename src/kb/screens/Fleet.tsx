@@ -54,7 +54,7 @@ export default function Fleet({ kind, model }: { kind?: Kind; model?: string }) 
             );
           })}
         </div>
-        {!shown.length && <p className="muted">No boat matches “{q}”.</p>}
+        {!shown.length && <p className="muted">{q.trim() ? `No boat matches “${q.trim()}”.` : `No boat in the fleet has ${model} yet.`}</p>}
         <a className="button secondary" href="#/new-boat">+ Add a boat</a>
       </section>
     </div>

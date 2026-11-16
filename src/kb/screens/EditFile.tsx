@@ -37,7 +37,8 @@ export default function EditFile({ path }: { path: string }) {
   const build = () => {
     if (!parts.hasFm || !isMd) return body;
     let text = original;
-    for (const [k, v] of fields) if (parseFrontmatter(text).fm[k] !== undefined || v.trim()) text = setFrontmatterField(text, k, v);
+    const before = new Map(parts.fields);
+    for (const [k, v] of fields) if (v.trim() !== (before.get(k) ?? '').trim()) text = setFrontmatterField(text, k, v);
     const head = /^---\r?\n[\s\S]*?\r?\n---[ \t]*(\r?\n|$)/.exec(text)![0];
     return head + body;
   };

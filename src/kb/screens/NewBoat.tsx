@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { boatFields, boatSlug, newBoatText } from '../edits';
 import { go, useKb } from '../KbApp';
 import { today } from './parts';
-import { SPEC_LABEL } from '../fleet';
+import { SPEC_LABEL, spec } from '../fleet';
 
 const FALLBACK = `---\nboat:\nformer_names:\ncompany:\ndivision:\nofficial_number:\nhorsepower:\nsize:\nbuilt:\nbuilder:\nhome_port:\nengines:\nengine_model:\ngenerators:\ngenerator_model:\ngear:\ngear_make:\nwheels:\ngross_tons:\nnet_tons:\nfuel_capacity:\nlube_capacity:\nheight:\neye_level:\nhull_depth:\ntype:\ncontrols:\nrated_rpm:\nidle_rpm:\ndc_system:\nsteering:\nfuel_capacity_full:\nlast_updated:\n---\n\n# <boat name>\n\n## Quick facts\n\n## Open issues\n| Issue | Status | File |\n|---|---|---|\n\n## Things to know walking aboard\n\n## People / contacts\n`;
 const LABEL: Record<string, string> = {
@@ -24,6 +24,8 @@ export default function NewBoat() {
   const [fields, setFields] = useState<Record<string, string>>({});
   const slug = boatSlug(name);
   const taken = c.boats.some((b) => b.slug === slug);
+  const bareName = name.trim().replace(/^(m\/?v\.?)\s+/i, '').toLowerCase();
+  const formerly = bareName ? c.boats.find((b) => spec(b, 'former_names').split(',').some((f) => f.trim().toLowerCase() === bareName)) : undefined;
 
   const create = () => {
     save({ kind: 'create', path: `boats/${slug}/boat.md`, text: newBoatText(template, { name: name.trim(), fields }, today()) }, `new boat: ${name.trim()}`);
@@ -37,6 +39,7 @@ export default function NewBoat() {
         <p className="small muted">Fill in what you know; the rest can wait. This makes boats/{slug || '<name>'}/boat.md from the template.</p>
         <label htmlFor="nb-name">Boat name<input id="nb-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="M/V Example" /></label>
         {taken && <p className="warnbox">There's already a boat with that name.</p>}
+        {formerly && <p className="warnbox">That's the former name of <a href={`#/boat/${formerly.slug}`}>{formerly.name}</a>. Add it only if it's a different boat.</p>}
         {keys.map((k) => (
           <label key={k} htmlFor={`nb-${k}`}>{LABEL[k] ?? k.replace(/_/g, ' ')}
             <input id={`nb-${k}`} value={fields[k] ?? ''} onChange={(e) => setFields({ ...fields, [k]: e.target.value })} />

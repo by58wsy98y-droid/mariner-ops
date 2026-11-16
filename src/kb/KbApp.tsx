@@ -31,6 +31,8 @@ export const useKb = () => useContext(Ctx)!;
 
 export const go = (hash: string) => { location.hash = hash; window.scrollTo(0, 0); };
 
+const fullyDecoded = (s: string) => { try { return decodeURIComponent(s); } catch { return s; } };
+
 function useRoute(): string[] {
   const [hash, setHash] = useState(location.hash);
   useEffect(() => {
@@ -38,7 +40,7 @@ function useRoute(): string[] {
     window.addEventListener('hashchange', on);
     return () => window.removeEventListener('hashchange', on);
   }, []);
-  return decodeURI(hash.replace(/^#\/?/, '')).split('/').filter(Boolean);
+  return hash.replace(/^#\/?/, '').split('/').filter(Boolean).map(fullyDecoded); // each part decoded once
 }
 
 function useOffline(): Kb['offline'] {
@@ -55,8 +57,6 @@ function useOffline(): Kb['offline'] {
   }, [sw]);
   return state;
 }
-
-const fullyDecoded = (s: string) => { try { return decodeURIComponent(s); } catch { return s; } };
 
 export default function KbApp({ store, docsList }: { store: KbStore; docsList: DocFile[] }) {
   const version = useSyncExternalStore((cb) => store.subscribe(cb), () => store.view());
@@ -87,11 +87,11 @@ export default function KbApp({ store, docsList }: { store: KbStore; docsList: D
   else if (screen === 'settings') page = <Settings />;
   else if (screen === 'edit' && a) page = <EditFile key={[a, ...rest].join('/')} path={[a, ...rest].join('/')} />;
   else if (screen === 'files') page = <Files />;
-  else if (screen === 'fleet') page = <Fleet kind={isKind(a) ? a : undefined} model={isKind(a) && rest.length ? fullyDecoded(rest.join('/')) : undefined} />;
+  else if (screen === 'fleet') page = <Fleet kind={isKind(a) ? a : undefined} model={isKind(a) && rest.length ? rest.join('/') : undefined} />;
   else page = <Home />;
   const tab = screen === 'library' || screen === 'docs' ? screen
     : screen === 'settings' || screen === 'files' ? 'settings'
-    : ['fleet', 'boat', 'fuel', 'new-issue', 'new-boat'].includes(screen) ? 'fleet' : 'home';
+    : ['fleet', 'boat', 'fuel', 'new-issue', 'new-boat'].includes(screen) || ((screen === 'doc' || screen === 'edit') && a === 'boats') ? 'fleet' : 'home';
 
   return (
     <Ctx.Provider value={kb}>
@@ -99,11 +99,17 @@ export default function KbApp({ store, docsList }: { store: KbStore; docsList: D
         <header>
           <div className="wrap">
             <div className="top">
-              <h1><a href="#/" className="home-link">Towboat Knowledge Base</a></h1>
+              <h1>
+                <a href="#/" className="home-link brand">
+                  <img className="brand-logo" src="marquette-logo-white.png" alt="Marquette Transportation Company" width="500" height="172" />
+                  <span className="brand-title">Engineering<br />Knowledge Base</span>
+                </a>
+              </h1>
             </div>
             <SyncLine status={status} offline={offline} />
           </div>
         </header>
+        <div className="print-brand">Marquette Transportation Company · Engineering Knowledge Base</div>
         <main className="wrap">{page}</main>
         <nav>
           <div className="wrap">

@@ -9,7 +9,7 @@ export function StatusPill({ status }: { status?: string }) {
 
 export function DocRow({ c, d, snippet, showBoat = true }: { c: Corpus; d: Doc; snippet?: string; showBoat?: boolean }) {
   return (
-    <a className="docrow" href={docHref(d.path)}>
+    <a className="docrow" href={d.type === 'boat' && d.boat ? `#/boat/${d.boat}` : docHref(d.path)}>
       <span className="docrow-top">
         {d.type === 'issue' && <StatusPill status={d.status} />}
         <span className="docrow-title">{d.title}</span>

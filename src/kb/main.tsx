@@ -17,7 +17,7 @@ fetch('kb-data.json')
   })
   .catch(() => {
     root.render(
-      <div className="boot"><h1>Towboat Knowledge Base</h1><p>Couldn't load the files. If this is the first time on this device, it needs signal once. Then reopen it.</p></div>
+      <div className="boot"><h1>Marquette Engineering Knowledge Base</h1><p>Couldn't load the files. If this is the first time on this device, it needs signal once. Then reopen it.</p></div>
     );
   });
 

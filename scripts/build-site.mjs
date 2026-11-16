@@ -112,7 +112,7 @@ self.addEventListener('fetch', (e) => {
 
 const root = ['./', 'index.html', ...closure('index.html'), 'manifest.webmanifest', 'icon.svg', 'icon-192.png', 'icon-512.png'];
 writeFileSync(join(DIR, 'sw.js'), serviceWorker({ name: 'engine-log', files: root }));
-const kbFiles = ['./', 'index.html', ...closure('kb/index.html'), 'kb-data.json', 'manifest.webmanifest', 'icon.svg', 'icon-192.png', 'icon-512.png'];
+const kbFiles = ['./', 'index.html', ...closure('kb/index.html'), 'kb-data.json', 'manifest.webmanifest', 'marquette-logo-white.png', 'icon-32.png', 'icon-180.png', 'icon-192.png', 'icon-512.png'];
 writeFileSync(join(DIR, 'kb', 'sw.js'), serviceWorker({ name: 'kb', files: kbFiles, runtime: { prefix: 'files/', cache: 'kb-files' } }));
 // Phones still running an early engine-log helper get its page at /kb/ too; that page then asks for its script
 // here. Answer with a small script that updates that helper (the new one leaves /kb/ alone) and reloads.
