@@ -23,14 +23,6 @@ last_updated: 2026-10-27
 - Crew-facing docs made for this boat are in `/docs` — daily fuel log workbook, ballast water
   form, rudder room trainee guides, throttle retraining steps.
 
-## Open issues (2026-10-27)
-| Issue | Status | File |
-|---|---|---|
-| Port main throws code bursts and ramps itself up with the lever untouched | OPEN — Inland reader + retraining pending | `issues/2026-10-23-port-main-codes-and-self-ramping.md` |
-| Starboard steering rudder not turning the wash — boat swings to port under load | OPEN — needs diver, reported to port engineer | `issues/2026-10-26-starboard-steering-rudder-not-turning.md` |
-| Deck winch station: no control power | UNKNOWN — last seen chasing 120 V control circuit | `issues/2026-10-23-deck-winch-no-control-power.md` |
-| Battery charger: amber residue on potted choke | UNKNOWN — heat/oil check not confirmed | `issues/2026-10-23-battery-charger-choke-residue.md` |
-
 ## Things to know walking aboard
 - **The fills are the gravity path on this boat.** Tanks tie together through the fill header,
   not the suction header. See `systems/fuel-system.md` before touching a valve.

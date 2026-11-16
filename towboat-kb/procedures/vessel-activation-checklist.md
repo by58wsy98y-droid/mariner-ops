@@ -3,7 +3,6 @@ title: Vessel activation (engineering) — coming out of standby, lay-up or dry 
 source: Conquer Checklist — Vessel Activation (Engineering), effective 9/20/24, rev. 9/9/26; approved by SVP Operations
 reference: Vessel Operations Manual 2.4
 applies_to: every vessel coming out of a standby status
-tags: [checklist, activation, standby, lay-up, dry-dock, drydock, conquer]
 ---
 
 # Vessel activation (engineering)

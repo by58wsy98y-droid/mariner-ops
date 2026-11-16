@@ -122,10 +122,12 @@ export default function BoatPage({ slug }: { slug: string }) {
         <a className="button secondary" href={`#/fuel/${slug}`}>Open the fuel log</a>
       </section>
 
-      <section className="card">
-        <h2>All issues <span className="count">{issues.length}</span></h2>
-        <div className="list">{issues.map((d) => <DocRow key={d.path} c={c} d={d} showBoat={false} />)}</div>
-      </section>
+      {issues.length > 0 && (
+        <section className="card">
+          <h2>All issues <span className="count">{issues.length}</span></h2>
+          <div className="list">{issues.map((d) => <DocRow key={d.path} c={c} d={d} showBoat={false} />)}</div>
+        </section>
+      )}
 
       <section className="card">
         <h2>Files for this boat</h2>

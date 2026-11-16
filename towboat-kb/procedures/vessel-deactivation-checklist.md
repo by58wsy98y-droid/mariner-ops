@@ -3,7 +3,6 @@ title: Vessel deactivation (engineering) — going into standby, lay-up or dry d
 source: Conquer Checklist — Vessel Deactivation (Engineering), effective 9/20/24; approved by SVP Operations
 reference: Vessel Operations Manual 2.4
 applies_to: every vessel going into a standby status
-tags: [checklist, deactivation, standby, lay-up, dry-dock, drydock, conquer]
 ---
 
 # Vessel deactivation (engineering)
