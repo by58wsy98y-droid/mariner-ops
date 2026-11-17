@@ -25,7 +25,7 @@ export default function Library({ at }: { at: string[] }) {
   const total = folders.reduce((n, f) => n + allDocs(f).length, 0);
   const row = (f: Folder) => (
     <FolderRow key={f.slug} href={`#/library/procedures/${f.slug}`} name={f.name} count={allDocs(f).length}
-      note={f.slug === 'general' ? 'Every boat' : f.children ? `${f.children.length} model${f.children.length === 1 ? '' : 's'}` : boatsNote(f.boats.length)} />
+      note={f.slug === 'general' ? 'Every boat' : boatsNote(f.boats.length) ?? 'No boats yet'} />
   );
 
   if (section === 'procedures' && path) {
@@ -68,7 +68,7 @@ export default function Library({ at }: { at: string[] }) {
       <section className="card">
         <h2 className="page-title">Library</h2>
         <div className="folders">
-          <FolderRow href="#/library/procedures" name="Procedures" note="General equipment, main engines and generators" count={total} />
+          <FolderRow href="#/library/procedures" name="Procedures" note="General equipment, engines and generators" count={total} />
         </div>
       </section>
     </div>

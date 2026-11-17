@@ -52,26 +52,55 @@ export function boatMatches(b: Boat, q: string): boolean {
 export const fleetHref = (kind: Kind, model: string) => `#/fleet/${kind}/${encodeURIComponent(model)}`;
 
 /**
- * Procedure folders: General equipment, one per main engine model in the fleet, then Generators with one
- * folder per generator model inside (procedures/generators/cat-3306/), then any other folder found.
+ * Procedure folders, A–Z with General equipment first and Generators last:
+ *   general/ · cat-3612/ · emd/{645,710}/{12cyl,16cyl,20cyl}/ · generators/<model>/
+ * A boat is in the folder for its engine_model ("EMD 710 16cyl" -> emd/710/16cyl) and its generator_model;
+ * a folder higher up covers every boat below it.
  */
 export interface Folder { slug: string; name: string; boats: Boat[]; docs: Doc[]; children?: Folder[] }
 const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 const unknownName = (f: string) => f.split('/').pop()!.replace(/-/g, ' ').toUpperCase();
+const EMD = /^EMD\s+(645|710)\s+(12|16|20)\s*cyl$/i;
 
 export function procedureFolders(boats: Boat[], docs: Doc[]): Folder[] {
   const procs = docs.filter((d) => d.type === 'procedure');
   const inFolder = (f: string) => procs.filter((d) => procedureFolder(d.path) === f).sort((a, b) => fmText(a.fm.mpc_code).localeCompare(fmText(b.fm.mpc_code)) || a.title.localeCompare(b.title));
-  const make = (f: string, name: string, bs: Boat[]): Folder => ({ slug: f, name, boats: bs, docs: inFolder(f) });
-  const folders: Folder[] = [make('general', 'General equipment', boats)];
-  for (const g of groups(boats, 'engine')) folders.push(make(slug(g.model), g.model, g.boats));
-  const gens = groups(boats, 'generator').map((g) => make(`generators/${slug(g.model)}`, g.model, g.boats));
-  for (const f of new Set(procs.map((d) => procedureFolder(d.path)).filter((f) => f.startsWith('generators/'))))
-    if (!gens.some((x) => x.slug === f)) gens.push(make(f, unknownName(f), []));
-  folders.push({ slug: 'generators', name: 'Generators', boats: [...new Set(gens.flatMap((g) => g.boats))], docs: inFolder('generators'), children: gens });
+  const top: Folder[] = [];
+  // the folder at this path, made (with any above it) if it isn't there yet
+  const ensure = (parts: { slug: string; name: string }[]): Folder => {
+    let list = top, path = '', f: Folder | undefined;
+    for (const p of parts) {
+      path = path ? `${path}/${p.slug}` : p.slug;
+      f = list.find((x) => x.slug === path);
+      if (!f) list.push((f = { slug: path, name: p.name, boats: [], docs: inFolder(path), children: [] }));
+      list = f.children!;
+    }
+    return f!;
+  };
+  const general = ensure([{ slug: 'general', name: 'General equipment' }]);
+  general.boats = boats;
+  const emd = (series: string, cyl: string) => [{ slug: 'emd', name: 'EMD' }, { slug: series, name: series }, { slug: `${cyl}cyl`, name: `${cyl}cyl` }];
+  if (boats.some((b) => /^EMD\b/i.test(modelOf(b, 'engine')))) for (const s of ['645', '710']) for (const n of ['12', '16', '20']) ensure(emd(s, n));
+  for (const g of groups(boats, 'engine')) {
+    const m = EMD.exec(g.model);
+    ensure(m ? emd(m[1], m[2]) : [{ slug: slug(g.model), name: g.model }]).boats.push(...g.boats);
+  }
+  const gens = ensure([{ slug: 'generators', name: 'Generators' }]);
+  for (const g of groups(boats, 'generator')) ensure([{ slug: 'generators', name: 'Generators' }, { slug: slug(g.model), name: g.model }]).boats.push(...g.boats);
+  // folders that have files but no boats yet
   for (const f of new Set(procs.map((d) => procedureFolder(d.path))))
-    if (!findFolder(folders, f)) folders.push(make(f, unknownName(f), []));
-  return folders;
+    if (!findFolder(top, f)) ensure(f.split('/').map((s) => ({ slug: s, name: unknownName(s) })));
+  // a folder covers the boats of the folders inside it; everything A–Z
+  const finish = (f: Folder) => {
+    const kids = f.children ?? [];
+    kids.forEach(finish);
+    kids.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
+    if (kids.length) f.boats = [...new Set([...f.boats, ...kids.flatMap((k) => k.boats)])];
+    else f.children = undefined;
+  };
+  top.forEach(finish);
+  const rest = top.filter((f) => f !== general && f !== gens).sort((a, b) => a.name.localeCompare(b.name));
+  return [general, ...rest, gens];
 }
 
 /** A folder by its path ("generators/cat-3306"), at any depth. */
@@ -87,9 +116,9 @@ export function findFolder(folders: Folder[], f: string): Folder | undefined {
 /** Everything filed in a folder and the folders inside it. */
 export const allDocs = (f: Folder): Doc[] => [...f.docs, ...(f.children ?? []).flatMap(allDocs)];
 
-/** Procedures for a boat: the General ones, and those for its main engine and its generators. */
+/** Procedures for a boat: every folder it's in (General, its engine's folders, its generator's), top down. */
 export function proceduresFor(b: Boat, folders: Folder[]): Doc[] {
-  const mine = (fs: Folder[]): Doc[] => fs.flatMap((f) => [...(f.slug === 'general' || (!f.children && f.boats.includes(b)) ? f.docs : []), ...mine(f.children ?? [])]);
+  const mine = (fs: Folder[]): Doc[] => fs.flatMap((f) => (f.boats.includes(b) ? [...f.docs, ...mine(f.children ?? [])] : []));
   return mine(folders);
 }
 

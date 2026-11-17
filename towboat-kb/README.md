@@ -14,7 +14,7 @@ boats/<boat-name>/
   issues/                 one file per problem, dated, with a status and a timeline
 procedures/               step-by-step procedures and maintenance cards, in folders:
   general/                  equipment every boat has
-  <engine-model>/           one folder per main engine model (e.g. cat-3612/)
+  cat-3612/, emd/710/16cyl/… one folder per main engine (EMD by series and cylinders)
   generators/<model>/       one folder per generator model (e.g. generators/cat-3306/)
 templates/                blank forms for a new boat, issue or procedure
 docs/                     finished deliverables: spreadsheets, forms, guides, photos

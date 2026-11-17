@@ -37,7 +37,7 @@ export function docType(path: string): DocType | null {
   if (/^boats\/[^/]+\/systems\/[^/]+\.md$/.test(path)) return 'system';
   if (/^boats\/[^/]+\/issues\/[^/]+\.md$/.test(path)) return 'issue';
   if (/^boats\/[^/]+\/fuel\/[^/]+\.md$/.test(path)) return 'fuel';
-  if (/^procedures\/(?:[^/]+\/){0,2}[^/]+\.md$/.test(path) && !/README\.md$/.test(path)) return 'procedure'; // procedures/<folder>[/<folder>]/x.md
+  if (/^procedures\/(?:[^/]+\/){0,3}[^/]+\.md$/.test(path) && !/README\.md$/.test(path)) return 'procedure'; // procedures/<folders…>/x.md, e.g. emd/710/16cyl
   if (/^knowledge\/[^/]+\.md$/.test(path) && !/README\.md$/.test(path)) return 'knowledge';
   return null; // README, templates, app-spec, docs/ and CSV files aren't documents
 }

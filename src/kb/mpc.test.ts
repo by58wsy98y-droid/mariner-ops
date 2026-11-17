@@ -13,7 +13,9 @@ const c = buildCorpus([
   { path: 'procedures/README.md', text: '# Procedures' },
   boat('kay', 'engine_model: CAT 3612\ngenerator_model: CAT 3306'),
   boat('ray', 'engine_model: CAT 3612\ngenerator_model: CAT 3306'),
-  boat('chad', 'engine_model: EMD 20-710G7C-T3\ngenerator_model: John Deere 6090'),
+  boat('chad', 'engine_model: EMD 710 20cyl\ngenerator_model: John Deere 6090'),
+  boat('legends', 'engine_model: EMD 710 16cyl'),
+  { path: 'procedures/emd/710/injector-check.md', text: '---\ntitle: 710 injector check\n---\n# 710 injector check\n' },
 ]);
 
 describe('procedures in folders', () => {
@@ -26,27 +28,30 @@ describe('procedures in folders', () => {
     expect(isCard(c.docs.find((d) => d.path.includes('valve-lash'))!)).toBe(false);
   });
 
-  it('folders: General equipment, one per engine model in the fleet (empty ones too), then Generators → one per model', () => {
+  it('folders: General first, engines A–Z (EMD → 645/710 → 12/16/20cyl), Generators last', () => {
     const fs = procedureFolders(c.boats, c.docs);
     expect(fs.map((f) => [f.slug, f.name, allDocs(f).length, f.boats.length])).toEqual([
-      ['general', 'General equipment', 1, 3],
+      ['general', 'General equipment', 1, 4],
       ['cat-3612', 'CAT 3612', 1, 2],
-      ['emd-20-710g7c-t3', 'EMD 20-710G7C-T3', 0, 1],
+      ['emd', 'EMD', 1, 2],
       ['generators', 'Generators', 1, 3],
     ]);
-    expect(findFolder(fs, 'generators')!.children!.map((f) => [f.slug, f.name, f.docs.length])).toEqual([
-      ['generators/cat-3306', 'CAT 3306', 1],
-      ['generators/john-deere-6090', 'John Deere 6090', 0],
-    ]);
+    const kids = (f: string) => findFolder(fs, f)!.children!.map((x) => [x.slug, x.name, x.boats.length]);
+    expect(kids('emd')).toEqual([['emd/645', '645', 0], ['emd/710', '710', 2]]);
+    expect(kids('emd/645')).toEqual([['emd/645/12cyl', '12cyl', 0], ['emd/645/16cyl', '16cyl', 0], ['emd/645/20cyl', '20cyl', 0]]);
+    expect(kids('emd/710')).toEqual([['emd/710/12cyl', '12cyl', 0], ['emd/710/16cyl', '16cyl', 1], ['emd/710/20cyl', '20cyl', 1]]);
+    expect(kids('generators')).toEqual([['generators/cat-3306', 'CAT 3306', 2], ['generators/john-deere-6090', 'John Deere 6090', 1]]);
+    expect(folderName(c.boats, 'emd/710/16cyl')).toBe('16cyl');
     expect(folderName(c.boats, 'cat-3612')).toBe('CAT 3612');
     expect(folderName(c.boats, 'generators/cat-3306')).toBe('CAT 3306');
   });
 
-  it('a boat gets the General procedures and those for its engine and its generators', () => {
+  it('a boat gets the procedures of every folder it is in: General, its engine (and the folders above it), its generator', () => {
     const fs = procedureFolders(c.boats, c.docs);
     const titles = (slug: string) => proceduresFor(c.boats.find((b) => b.slug === slug)!, fs).map((d) => d.title);
     expect(titles('kay')).toEqual(['Reduction Gear Maintenance', 'Valve lash check', 'Generator oil change']);
-    expect(titles('chad')).toEqual(['Reduction Gear Maintenance']);
+    expect(titles('chad')).toEqual(['Reduction Gear Maintenance', '710 injector check']); // filed in emd/710: every 710
+    expect(titles('legends')).toEqual(['Reduction Gear Maintenance', '710 injector check']);
   });
 
   it('are found by their MPC code and by what a step says', () => {
