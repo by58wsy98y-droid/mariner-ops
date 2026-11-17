@@ -9,7 +9,7 @@ built: 1972
 builder: St. Louis Ship
 home_port: St. Louis, Missouri, USA
 engines: P-EMD-16-710G7C-T3-LH / S-EMD-16-710G7C-T3-RH
-engine_model: EMD 16-710
+engine_model: EMD 710 16cyl
 generators: JD 6081
 generator_model: John Deere 6081
 gear: 4.515:1 Falk

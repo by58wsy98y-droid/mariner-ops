@@ -8,7 +8,7 @@ const FALLBACK = `---\nboat:\nformer_names:\ncompany:\ndivision:\nofficial_numbe
 const LABEL: Record<string, string> = {
   ...SPEC_LABEL,
   engines: 'Main engines, as on the spec sheet (e.g. P-CAT-3612-LH / S-CAT-3612-RH)',
-  engine_model: 'Main engine model, to group the fleet (e.g. CAT 3612)',
+  engine_model: 'Main engine, to group the fleet (e.g. CAT 3612, EMD 710 16cyl, EMD 645 12cyl)',
   generator_model: 'Generator model, to group the fleet (e.g. CAT 3306)',
   gear: 'Gear ratio and maker (e.g. 4.75:1 Reintjes)',
   gear_make: 'Gear maker, to group the fleet (e.g. Reintjes)',

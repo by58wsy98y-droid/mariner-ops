@@ -9,7 +9,7 @@ built: 1971
 repowered: 2015
 builder: Jeffboat
 engines: P-EMD-12-710G7C-T3-LH / C-EMD-12-710G7C-T3-LH / S-EMD-12-710G7C-T3-RH
-engine_model: EMD 12-710
+engine_model: EMD 710 12cyl
 generators: JD 6090
 generator_model: John Deere 6090
 gear: Falk MR 3048 4.345:1

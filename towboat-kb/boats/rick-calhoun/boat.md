@@ -9,7 +9,7 @@ built: 2015
 builder: Gulf Island Fab.
 home_port: St. Louis, Missouri, USA
 engines: P-EMD-20-710G7C-T3-LH / S-EMD-20-710G7C-T3-RH
-engine_model: EMD 20-710
+engine_model: EMD 710 20cyl
 generators: JD 6090
 generator_model: John Deere 6090
 gear: 4.75:1 Lufkin

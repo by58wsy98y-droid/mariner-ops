@@ -9,7 +9,7 @@ built: 2001
 builder: Bollinger Shipyards
 home_port: St. Louis, Missouri, USA
 engines: P-EMD-710G7B/1042-LH / S-EMD-710G7B/1042-RH
-engine_model: EMD 710G7B
+engine_model: EMD 710 16cyl
 generators: CAT-3306B
 generator_model: CAT 3306
 gear: 5.01:1 Lufkin
