@@ -4,7 +4,7 @@ import { go, useKb } from '../KbApp';
 import { today } from './parts';
 import { SPEC_LABEL, spec } from '../fleet';
 
-const FALLBACK = `---\nboat:\nformer_names:\ncompany:\ndivision:\nofficial_number:\nhorsepower:\nsize:\nbuilt:\nbuilder:\nhome_port:\nengines:\nengine_model:\ngenerators:\ngenerator_model:\ngear:\ngear_make:\nwheels:\ngross_tons:\nnet_tons:\nfuel_capacity:\nlube_capacity:\nheight:\neye_level:\nhull_depth:\ntype:\ncontrols:\nrated_rpm:\nidle_rpm:\ndc_system:\nsteering:\nfuel_capacity_full:\nlast_updated:\n---\n\n# <boat name>\n\n## Quick facts\n\n## Open issues\n| Issue | Status | File |\n|---|---|---|\n\n## Things to know walking aboard\n\n## People / contacts\n`;
+const FALLBACK = `---\nboat:\nformer_names:\ncompany:\ndivision:\nofficial_number:\nhorsepower:\nsize:\nbuilt:\nrepowered:\nbuilder:\nhome_port:\nengines:\nengine_model:\ngenerators:\ngenerator_model:\ngear:\ngear_make:\nwheels:\nkort_nozzles:\ngross_tons:\nnet_tons:\nfuel_capacity:\nlube_capacity:\nheight:\neye_level:\nhull_depth:\nelectronics:\ntype:\ncontrols:\nrated_rpm:\nidle_rpm:\ndc_system:\nsteering:\nfuel_capacity_full:\nlast_updated:\n---\n\n# <boat name>\n\n## Quick facts\n\n## Open issues\n| Issue | Status | File |\n|---|---|---|\n\n## Things to know walking aboard\n\n## People / contacts\n`;
 const LABEL: Record<string, string> = {
   ...SPEC_LABEL,
   engines: 'Main engines, as on the spec sheet (e.g. P-CAT-3612-LH / S-CAT-3612-RH)',

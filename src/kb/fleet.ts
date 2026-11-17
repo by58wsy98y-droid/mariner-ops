@@ -16,11 +16,11 @@ export const isKind = (k: string | undefined): k is Kind => KINDS.some((x) => x.
 /** Spec-sheet field names, in the order of the company sheet. */
 export const SPEC_LABEL: Record<string, string> = {
   former_names: 'Former names', official_number: 'Official number', horsepower: 'Horsepower', size: 'Size (length x breadth, ft)',
-  built: 'Built (year)', builder: 'Builder', home_port: 'Home port',
+  built: 'Built (year)', repowered: 'Repowered (year)', builder: 'Builder', home_port: 'Home port',
   engines: 'Main engines', engine_model: 'Main engine model', generators: 'Generators', generator_model: 'Generator model',
-  gear: 'Gear ratio', gear_make: 'Gear maker', wheels: 'Wheels',
+  gear: 'Gear ratio', gear_make: 'Gear maker', wheels: 'Wheels', kort_nozzles: 'Kort nozzles',
   gross_tons: 'Gross tons', net_tons: 'Net tons', fuel_capacity: 'Fuel capacity (gal)', lube_capacity: 'Lube capacity (gal)',
-  height: 'Height', eye_level: 'Eye level', hull_depth: 'Hull depth',
+  height: 'Height', eye_level: 'Eye level', hull_depth: 'Hull depth', electronics: 'Electronics',
 };
 
 const val = (fm: Record<string, FmValue>, k: string) => fmText(fm[k]).trim();

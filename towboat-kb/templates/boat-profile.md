@@ -7,6 +7,7 @@ official_number:
 horsepower:
 size:
 built:
+repowered:
 builder:
 home_port:
 engines:
@@ -16,6 +17,7 @@ generator_model:
 gear:
 gear_make:
 wheels:
+kort_nozzles:
 gross_tons:
 net_tons:
 fuel_capacity:
@@ -23,6 +25,7 @@ lube_capacity:
 height:
 eye_level:
 hull_depth:
+electronics:
 type:
 controls:
 rated_rpm:

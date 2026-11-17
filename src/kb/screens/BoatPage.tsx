@@ -21,11 +21,13 @@ const STATS = ['gross_tons', 'net_tons', 'fuel_capacity', 'lube_capacity', 'heig
 /** The company spec sheet: size and build up top, the machinery, then tonnage, capacities and air draft. */
 function SpecSheet({ c, boat }: { c: Corpus; boat: Boat }) {
   const v = (k: string) => spec(boat, k);
-  const built = [v('built') && `Built ${v('built')}`, v('builder') && `${v('built') ? 'at' : 'Built at'} ${v('builder')}`].filter(Boolean).join(' ');
+  const built = [v('built') && `Built ${v('built')}`, v('builder') && `${v('built') ? 'at' : 'Built at'} ${v('builder')}`].filter(Boolean).join(' ') + (v('repowered') ? `, repowered ${v('repowered')}` : '');
   const head = [v('horsepower') && `${v('horsepower')} HP`, v('size') && `${v('size')} ft`, built, v('official_number') && `Official no. ${v('official_number')}`, v('home_port'), v('division')].filter(Boolean);
   const rows = [
     ...KINDS.map((k) => ({ label: SPEC_LABEL[k.printed], text: v(k.printed) || modelOf(boat, k.kind), kind: k.kind })),
     { label: 'Wheels', text: v('wheels'), kind: undefined },
+    { label: 'Kort nozzles', text: v('kort_nozzles'), kind: undefined },
+    { label: 'Electronics', text: v('electronics'), kind: undefined },
   ].filter((r) => r.text);
   const stats = STATS.filter((k) => v(k));
   return (

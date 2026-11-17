@@ -9,7 +9,7 @@ built: 2016
 builder: Gulf Island Fab.
 home_port: St. Louis, Missouri, USA
 engines: P-EMD-20-710G7C-T3-LH / S-EMD-20-710G7C-T3-RH
-engine_model: EMD 20-710G7C-T3
+engine_model: EMD 20-710
 generators: JD 6090
 generator_model: John Deere 6090
 gear: 4.762:1 Reintjes
