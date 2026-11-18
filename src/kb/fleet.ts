@@ -1,6 +1,6 @@
 // The fleet: each boat's spec-sheet fields (in its boat.md) and the boats grouped by the equipment they run,
 // so a manual or a known problem for one model can be found from every boat that has it.
-import { fmText, type FmValue } from './frontmatter';
+import { fmList, fmText, type FmValue } from './frontmatter';
 import { procedureFolder, type Boat, type Doc } from './corpus';
 
 export type Kind = 'engine' | 'generator' | 'gear';
@@ -64,7 +64,9 @@ const EMD = /^EMD\s+(645|710)\s+(12|16|20)\s*cyl$/i;
 
 export function procedureFolders(boats: Boat[], docs: Doc[]): Folder[] {
   const procs = docs.filter((d) => d.type === 'procedure');
-  const inFolder = (f: string) => procs.filter((d) => procedureFolder(d.path) === f).sort((a, b) => fmText(a.fm.mpc_code).localeCompare(fmText(b.fm.mpc_code)) || a.title.localeCompare(b.title));
+  // filed in the folder, or listed in it with also_in: (a card for "EMD 645 & 710" is in both)
+  const inFolder = (f: string) => procs.filter((d) => procedureFolder(d.path) === f || fmList(d.fm.also_in).includes(f))
+    .sort((a, b) => fmText(a.fm.mpc_code).localeCompare(fmText(b.fm.mpc_code)) || a.title.localeCompare(b.title));
   const top: Folder[] = [];
   // the folder at this path, made (with any above it) if it isn't there yet
   const ensure = (parts: { slug: string; name: string }[]): Folder => {
@@ -88,7 +90,7 @@ export function procedureFolders(boats: Boat[], docs: Doc[]): Folder[] {
   const gens = ensure([{ slug: 'generators', name: 'Generators' }]);
   for (const g of groups(boats, 'generator')) ensure([{ slug: 'generators', name: 'Generators' }, { slug: slug(g.model), name: g.model }]).boats.push(...g.boats);
   // folders that have files but no boats yet
-  for (const f of new Set(procs.map((d) => procedureFolder(d.path))))
+  for (const f of new Set(procs.flatMap((d) => [procedureFolder(d.path), ...fmList(d.fm.also_in)])))
     if (!findFolder(top, f)) ensure(f.split('/').map((s) => ({ slug: s, name: unknownName(s) })));
   // a folder covers the boats of the folders inside it; everything A–Z
   const finish = (f: Folder) => {
@@ -113,14 +115,21 @@ export function findFolder(folders: Folder[], f: string): Folder | undefined {
   return undefined;
 }
 
-/** Everything filed in a folder and the folders inside it. */
-export const allDocs = (f: Folder): Doc[] => [...f.docs, ...(f.children ?? []).flatMap(allDocs)];
+/** Everything filed in a folder and the folders inside it (each once). */
+export const allDocs = (f: Folder): Doc[] => [...new Set([...f.docs, ...(f.children ?? []).flatMap(allDocs)])];
 
 /** Procedures for a boat: every folder it's in (General, its engine's folders, its generator's), top down. */
 export function proceduresFor(b: Boat, folders: Folder[]): Doc[] {
   const mine = (fs: Folder[]): Doc[] => fs.flatMap((f) => (f.boats.includes(b) ? [...f.docs, ...mine(f.children ?? [])] : []));
-  return mine(folders);
+  return [...new Set(mine(folders))];
 }
 
 /** "general" -> "General equipment", "cat-3612" -> "CAT 3612", "generators/cat-3306" -> "CAT 3306". */
 export const folderName = (boats: Boat[], f: string) => findFolder(procedureFolders(boats, []), f)?.name ?? unknownName(f);
+
+/** The whole way down to a folder, e.g. "EMD 710 20cyl", "Generators · CAT 3306", "General equipment". */
+export function folderPath(boats: Boat[], f: string): string {
+  const parts = f.split('/');
+  const names = parts.map((_, i) => folderName(boats, parts.slice(0, i + 1).join('/')));
+  return names[0] === 'EMD' ? names.join(' ') : names.join(' · ');
+}

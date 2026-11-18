@@ -24,6 +24,8 @@ function splitAt(blocks: Block[], level: number): Part[] {
 }
 
 const TASK = /^(\d+)[.)]\s+(.*)$/;
+// a step with pictures may run onto the next page when printed; the others are kept whole
+const hasPics = (blocks: Block[]) => blocks.some((b) => b.t === 'p' && b.c.some((x) => x.t === 'img'));
 
 // Working through a card tick by tick: which tasks are ticked and when, kept on this device per card.
 interface Run { on: boolean; ticked: Record<string, string> } // task number -> time ticked (ISO)
@@ -110,7 +112,7 @@ export default function MpcCard({ c, doc }: { c: Corpus; doc: Doc }) {
               const task = part.head && TASK.exec(part.head.text);
               if (task)
                 return (
-                  <div key={j} id={`task-${task[1]}`} className={`mpc-task${run.ticked[task[1]] ? ' done' : ''}${run.on && task[1] === next ? ' current' : ''}`}>
+                  <div key={j} id={`task-${task[1]}`} className={`mpc-task${hasPics(part.body) ? ' has-pics' : ''}${run.ticked[task[1]] ? ' done' : ''}${run.on && task[1] === next ? ' current' : ''}`}>
                     <div className="mpc-task-head">
                       <span className="mpc-num">{task[1]}</span>
                       {run.on ? (
@@ -137,6 +139,9 @@ export default function MpcCard({ c, doc }: { c: Corpus; doc: Doc }) {
           </div>
         </section>
       ))}
+      {(f('revision') || f('marking')) && (
+        <div className="mpc-foot"><span>{[f('mpc_code'), f('revision')].filter(Boolean).join(' ')}</span><span>{f('marking')}</span></div>
+      )}
     </div>
     {run.on && tasks.length > 0 && (
       <div className="mpc-finish no-print">

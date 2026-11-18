@@ -60,11 +60,14 @@ export default function Md({ c, from, blocks }: { c: Corpus; from: string; block
             return <H key={i}>{inlines(c, from, b.c)}</H>;
           }
           case 'p': {
-            // a picture on its own line is a figure; its text in [ ] is the caption
-            const only = b.c.length === 1 && b.c[0].t === 'img' ? b.c[0] : null;
-            if (only) {
-              const src = imgSrc(from, only.src);
-              return src ? <figure key={i}><img src={src} alt={only.alt || 'Picture'} loading="lazy" />{only.alt && <figcaption>{only.alt}</figcaption>}</figure> : null;
+            // pictures on their own line are figures (side by side when there are several); the text in [ ] is the caption
+            const pics = b.c.filter((x) => !(x.t === 'text' && !x.v.trim()));
+            if (pics.length && pics.every((x) => x.t === 'img')) {
+              const figs = (pics as { src: string; alt: string }[]).map((p, j) => {
+                const src = imgSrc(from, p.src);
+                return src ? <figure key={j}><img src={src} alt={p.alt || 'Picture'} loading="lazy" />{p.alt && <figcaption>{p.alt}</figcaption>}</figure> : null;
+              });
+              return figs.length > 1 ? <div key={i} className="figrow">{figs}</div> : <Fragment key={i}>{figs}</Fragment>;
             }
             // "a. ..." lines under a step sit indented, like the sub-items on the paper card
             const sub = b.c[0]?.t === 'text' && /^[a-z][.)]\s/.test(b.c[0].v);

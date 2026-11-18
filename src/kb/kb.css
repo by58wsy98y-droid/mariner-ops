@@ -233,7 +233,13 @@ details summary { cursor: pointer; padding-block: 6px; }
   .mpc-safety, .mpc-task, .mpc-free { grid-column: 1 / -1; }
   /* a task may run onto the next page, but its title never sits alone at the bottom of one */
   .mpc-box, .md figure, .mpc-task-body p { break-inside: avoid; }
-  .mpc-task-head { break-after: avoid; }
+  .mpc-task-head, .mpc-bar { break-after: avoid; }
+  .mpc-task:not(.has-pics), .mpc-task-head + .mpc-task-body > .md > :first-child { break-inside: avoid; }
+  .mpc, .mpc-task { overflow: visible !important; }
+  /* grids that run across a page break print with the wrong height (the footer lands on the last step), so blocks */
+  .kbapp .mpc, .kbapp .mpc-parts:not(.has-boxes), .kbapp .mpc .md { display: block !important; }
+  .mpc-parts:not(.has-boxes) > * + *, .mpc .md > * + * { margin-top: 6pt; }
+  .mpc .md > * { margin-bottom: 0; }
   .md figure img { max-height: 2.3in; width: auto; }
 }
 
@@ -261,3 +267,6 @@ details summary { cursor: pointer; padding-block: 6px; }
 .folder-text { display: grid; gap: 2px; min-width: 0; overflow-wrap: anywhere; }
 .folder-text b { font-size: 17px; }
 .folder-chevron { font-size: 24px; line-height: 1; color: var(--muted); }
+.figrow { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; align-items: start; }
+.mpc-foot { display: flex; justify-content: space-between; gap: 12px; padding: 6px 10px; border-top: 2px solid var(--ink); font-size: 12px; color: var(--muted); }
+@media print { .mpc-foot { border-color: #000 !important; } .figrow { break-inside: avoid; } }

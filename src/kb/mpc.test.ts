@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildCorpus, docType, isCard, procedureFolder } from './corpus';
-import { allDocs, findFolder, folderName, procedureFolders, proceduresFor } from './fleet';
+import { allDocs, findFolder, folderName, folderPath, procedureFolders, proceduresFor } from './fleet';
 import { parseInline, parseMarkdown } from './markdown';
 import { buildIndex, search } from './search';
 
@@ -65,4 +65,25 @@ describe('procedures in folders', () => {
     expect(parseMarkdown('![](images/a.jpg)')[0]).toEqual({ t: 'p', c: [{ t: 'img', src: 'images/a.jpg', alt: '' }] });
     expect(parseInline('see [the manual](https://example.com/x.pdf)')[1]).toMatchObject({ t: 'link' });
   });
+
+  it('a card for "EMD 645 & 710" filed in 710 is listed in the 645 folder too (once per boat, once in counts)', () => {
+    const c2 = buildCorpus([
+      { path: 'procedures/emd/710/16cyl/airbox.md', text: '---\ntitle: Airbox 16\nmpc_code: MPC-E-233-1-CM-M-216\nalso_in: emd/645/16cyl\n---\n# Airbox 16\n' },
+      boat('legends', 'engine_model: EMD 710 16cyl'),
+      boat('old', 'engine_model: EMD 645 16cyl'),
+    ]);
+    const fs = procedureFolders(c2.boats, c2.docs);
+    expect(findFolder(fs, 'emd/710/16cyl')!.docs.map((d) => d.title)).toEqual(['Airbox 16']);
+    expect(findFolder(fs, 'emd/645/16cyl')!.docs.map((d) => d.title)).toEqual(['Airbox 16']);
+    expect(allDocs(findFolder(fs, 'emd')!)).toHaveLength(1);
+    for (const b of c2.boats) expect(proceduresFor(b, fs).map((d) => d.title)).toEqual(['Airbox 16']);
+    expect(folderPath(c2.boats, 'emd/710/16cyl')).toBe('EMD 710 16cyl');
+    expect(folderPath(c2.boats, 'generators/cat-3306')).toBe('Generators · CAT 3306');
+  });
+
+  it('pictures on one line sit side by side; one picture is a figure', () => {
+    const [p] = parseMarkdown('![Figure 1](images/a.jpg) ![Figure 2](images/b.jpg)');
+    expect(p.t === 'p' && p.c.filter((x) => x.t === 'img')).toHaveLength(2);
+  });
 });
+

@@ -1,6 +1,6 @@
 // Small pieces shared by the screens.
 import { boatName, isCard, procedureFolder, statusWord, type Corpus, type Doc } from '../corpus';
-import { folderName, modelOf } from '../fleet';
+import { folderPath, modelOf } from '../fleet';
 import { fmText } from '../frontmatter';
 import { docHref } from '../Md';
 
@@ -21,7 +21,7 @@ export function DocRow({ c, d, snippet, showBoat = true, showFolder = true }: { 
       </span>
       <span className="docrow-meta">
         {showBoat && d.boat && <span className="chip">{boatName(c, d.boat)}{engineOf(c, d.boat) && <> · {engineOf(c, d.boat)}</>}</span>}
-        {d.type === 'procedure' && showFolder && <span className="chip">{folderName(c.boats, procedureFolder(d.path))}</span>}
+        {d.type === 'procedure' && showFolder && <span className="chip">{folderPath(c.boats, procedureFolder(d.path))}</span>}
         {isCard(d) && <>{[d.fm.mpc_code, d.fm.frequency].map((v) => fmText(v)).filter(Boolean).map((v) => <span key={v}>{v}</span>)}</>}
         {d.date && <span>{d.date}</span>}
         {d.system && <span>{d.system}</span>}
