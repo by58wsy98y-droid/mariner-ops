@@ -8,8 +8,8 @@ procedures/
   general/              equipment every boat has (e.g. reduction gear maintenance), on every boat
   cat/                  main engines by make, then model, named like the boats' engine_model
     3606/ 3612/           ("CAT 3612" -> cat/3612/, "Cummins QSK60" -> cummins/qsk60/)
-  cummins/
-    qsk60/                the Z drives' main engines
+  cummins/              the Z drives (all Cummins): cards for their engines or Steerprop drives
+    qsk60/                their main engines
   emd/                  on every EMD boat
     645/                  on every 645 (mechanical)
       12cyl/ 16cyl/ 20cyl/
@@ -17,8 +17,6 @@ procedures/
       12cyl/ 16cyl/ 20cyl/  engine_model "EMD 710 16cyl" -> emd/710/16cyl/
   gearboxes/            a conventional boat's reduction gear, by the boats' gear_make
     falk/ haley/ lufkin/ reintjes/
-  z-drives/             a Z drive boat's drives (propulsion: Z drive), by gear_make
-    steerprop/
   generators/           by make, then model, from the boats' generator_model
     cat/3306/  cummins/6cta8-3d/ qsm11/ qsx15/  john-deere/6081/ 6090/
 ```

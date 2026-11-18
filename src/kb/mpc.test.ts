@@ -107,18 +107,17 @@ describe('procedures in folders', () => {
     expect(proceduresFor(c3.boats.find((b) => b.slug === 'b')!, fs)).toEqual([]);
   });
 
-  it('Z drive boats: engines by make (Cummins → QSK60), drives under Z drives not Gearboxes, generators by make', () => {
+  it('Z drive boats: engines by make (Cummins → QSK60), no folder for their drives, generators by make', () => {
     const c4 = buildCorpus([
       boat('cindy', 'propulsion: Z drive\nengine_model: Cummins QSK60\ngear_make: Steerprop\ngenerator_model: Cummins QSM11'),
       boat('myra', 'engine_model: CAT 3612\ngear_make: Falk\ngenerator_model: Cummins 6CTA8.3D'),
     ]);
     const fs = procedureFolders(c4.boats, c4.docs);
-    expect(fs.map((f) => f.slug)).toEqual(['general', 'cat', 'cummins', 'gearboxes', 'z-drives', 'generators']);
+    expect(fs.map((f) => f.slug)).toEqual(['general', 'cat', 'cummins', 'gearboxes', 'generators']);
     expect(findFolder(fs, 'cummins/qsk60')!.boats.map((b) => b.slug)).toEqual(['cindy']);
-    expect(findFolder(fs, 'z-drives/steerprop')!.boats.map((b) => b.slug)).toEqual(['cindy']);
+    expect(findFolder(fs, 'z-drives')).toBeUndefined();
     expect(findFolder(fs, 'gearboxes/steerprop')).toBeUndefined();
     expect(findFolder(fs, 'generators/cummins')!.children!.map((f) => f.name)).toEqual(['6CTA8.3D', 'QSM11']);
-    expect(folderPath(c4.boats, 'z-drives/steerprop')).toBe('Z drives · Steerprop');
     expect(folderPath(c4.boats, 'cummins/qsk60')).toBe('Cummins QSK60');
   });
 });
