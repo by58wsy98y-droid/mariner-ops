@@ -15,8 +15,6 @@ function FolderRow({ href, name, note, count }: { href: string; name: string; no
   );
 }
 
-const boatsNote = (n: number) => (n ? `${n} boat${n > 1 ? 's' : ''}` : undefined);
-
 export default function Library({ at }: { at: string[] }) {
   const { corpus: c } = useKb();
   const folders = procedureFolders(c.boats, c.docs);
@@ -24,8 +22,7 @@ export default function Library({ at }: { at: string[] }) {
   const path = inside.join('/');
   const total = folders.reduce((n, f) => n + allDocs(f).length, 0);
   const row = (f: Folder) => (
-    <FolderRow key={f.slug} href={`#/library/procedures/${f.slug}`} name={f.name} count={allDocs(f).length}
-      note={f.slug === 'general' ? 'Every boat' : boatsNote(f.boats.length) ?? 'No boats yet'} />
+    <FolderRow key={f.slug} href={`#/library/procedures/${f.slug}`} name={f.name} count={allDocs(f).length} />
   );
 
   if (section === 'procedures' && path) {
