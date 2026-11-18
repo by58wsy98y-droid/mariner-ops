@@ -8,7 +8,7 @@ const card = `---\ntitle: Reduction Gear Maintenance\nmpc_code: MPC-E-312-QT\nfr
 const boat = (slug: string, fm: string) => ({ path: `boats/${slug}/boat.md`, text: `---\nboat: M/V ${slug}\n${fm}\n---\n` });
 const c = buildCorpus([
   { path: 'procedures/general/mpc-e-312-qt-reduction-gear-maintenance.md', text: card },
-  { path: 'procedures/cat-3612/valve-lash.md', text: '---\ntitle: Valve lash check\n---\n# Valve lash check\n' },
+  { path: 'procedures/cat/3612/valve-lash.md', text: '---\ntitle: Valve lash check\n---\n# Valve lash check\n' },
   { path: 'procedures/generators/cat-3306/oil-change.md', text: '---\ntitle: Generator oil change\n---\n# Generator oil change\n' },
   { path: 'procedures/README.md', text: '# Procedures' },
   boat('kay', 'engine_model: CAT 3612\ngenerator_model: CAT 3306'),
@@ -22,7 +22,7 @@ describe('procedures in folders', () => {
   it('are procedures filed by folder; the README is not one', () => {
     expect(docType('procedures/general/mpc-e-312-qt-reduction-gear-maintenance.md')).toBe('procedure');
     expect(docType('procedures/README.md')).toBeNull();
-    expect(procedureFolder('procedures/cat-3612/valve-lash.md')).toBe('cat-3612');
+    expect(procedureFolder('procedures/cat/3612/valve-lash.md')).toBe('cat/3612');
     expect(procedureFolder('procedures/generators/cat-3306/oil-change.md')).toBe('generators/cat-3306');
     expect(isCard(c.docs.find((d) => d.path.includes('mpc-e-312'))!)).toBe(true);
     expect(isCard(c.docs.find((d) => d.path.includes('valve-lash'))!)).toBe(false);
@@ -32,7 +32,7 @@ describe('procedures in folders', () => {
     const fs = procedureFolders(c.boats, c.docs);
     expect(fs.map((f) => [f.slug, f.name, allDocs(f).length, f.boats.length])).toEqual([
       ['general', 'General equipment', 1, 4],
-      ['cat-3612', 'CAT 3612', 1, 2],
+      ['cat', 'CAT', 1, 2],
       ['emd', 'EMD', 1, 2],
       ['generators', 'Generators', 1, 3],
     ]);
@@ -42,7 +42,9 @@ describe('procedures in folders', () => {
     expect(kids('emd/710')).toEqual([['emd/710/12cyl', '12cyl', 0], ['emd/710/16cyl', '16cyl', 1], ['emd/710/20cyl', '20cyl', 1]]);
     expect(kids('generators')).toEqual([['generators/cat-3306', 'CAT 3306', 2], ['generators/john-deere-6090', 'John Deere 6090', 1]]);
     expect(folderName(c.boats, 'emd/710/16cyl')).toBe('16cyl');
-    expect(folderName(c.boats, 'cat-3612')).toBe('CAT 3612');
+    expect(folderName(c.boats, 'cat/3612')).toBe('3612');
+    expect(findFolder(fs, 'cat')!.children!.map((x) => [x.slug, x.name, x.boats.length])).toEqual([['cat/3612', '3612', 2]]);
+    expect(folderPath(c.boats, 'cat/3612')).toBe('CAT 3612');
     expect(folderName(c.boats, 'generators/cat-3306')).toBe('CAT 3306');
   });
 
@@ -98,7 +100,7 @@ describe('procedures in folders', () => {
       boat('b', 'engine_model: CAT 3612\ngear_make: Reintjes'),
     ]);
     const fs = procedureFolders(c3.boats, c3.docs);
-    expect(fs.map((f) => f.slug)).toEqual(['general', 'cat-3612', 'emd', 'gearboxes', 'generators']);
+    expect(fs.map((f) => f.slug)).toEqual(['general', 'cat', 'emd', 'gearboxes', 'generators']);
     expect(findFolder(fs, 'gearboxes')!.children!.map((f) => [f.name, f.boats.length, f.docs.length])).toEqual([['Falk', 1, 1], ['Reintjes', 1, 0]]);
     expect(proceduresFor(c3.boats.find((b) => b.slug === 'a')!, fs).map((d) => d.title)).toEqual(['Falk air panel']);
     expect(proceduresFor(c3.boats.find((b) => b.slug === 'b')!, fs)).toEqual([]);

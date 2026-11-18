@@ -6,7 +6,8 @@ folders:
 ```
 procedures/
   general/              equipment every boat has (e.g. reduction gear maintenance), on every boat
-  cat-3612/             a main engine other than EMD, named like the boats' engine_model
+  cat/                  on every CAT main engine boat
+    3606/ 3612/           engine_model "CAT 3612" -> cat/3612/
   emd/                  on every EMD boat
     645/                  on every 645 (mechanical)
       12cyl/ 16cyl/ 20cyl/

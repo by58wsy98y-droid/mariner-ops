@@ -53,7 +53,7 @@ export const fleetHref = (kind: Kind, model: string) => `#/fleet/${kind}/${encod
 
 /**
  * Procedure folders, A–Z with General equipment first and Generators last:
- *   general/ · cat-3612/ · emd/{645,710}/{12cyl,16cyl,20cyl}/ · gearboxes/<maker>/ · generators/<model>/
+ *   general/ · cat/{3606,3612}/ · emd/{645,710}/{12cyl,16cyl,20cyl}/ · gearboxes/<maker>/ · generators/<model>/
  * A boat is in the folder for its engine_model ("EMD 710 16cyl" -> emd/710/16cyl) and its generator_model;
  * a folder higher up covers every boat below it.
  */
@@ -61,6 +61,7 @@ export interface Folder { slug: string; name: string; boats: Boat[]; docs: Doc[]
 const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 const unknownName = (f: string) => f.split('/').pop()!.replace(/-/g, ' ').toUpperCase();
 const EMD = /^EMD\s+(645|710)\s+(12|16|20)\s*cyl$/i;
+const CAT = /^CAT\s+(\d{4}[A-Z]?)$/i; // CAT 3606, CAT 3612 → one CAT folder with a folder per model
 
 export function procedureFolders(boats: Boat[], docs: Doc[]): Folder[] {
   const procs = docs.filter((d) => d.type === 'procedure');
@@ -84,8 +85,8 @@ export function procedureFolders(boats: Boat[], docs: Doc[]): Folder[] {
   const emd = (series: string, cyl: string) => [{ slug: 'emd', name: 'EMD' }, { slug: series, name: series }, { slug: `${cyl}cyl`, name: `${cyl}cyl` }];
   if (boats.some((b) => /^EMD\b/i.test(modelOf(b, 'engine')))) for (const s of ['645', '710']) for (const n of ['12', '16', '20']) ensure(emd(s, n));
   for (const g of groups(boats, 'engine')) {
-    const m = EMD.exec(g.model);
-    ensure(m ? emd(m[1], m[2]) : [{ slug: slug(g.model), name: g.model }]).boats.push(...g.boats);
+    const m = EMD.exec(g.model), cat = CAT.exec(g.model);
+    ensure(m ? emd(m[1], m[2]) : cat ? [{ slug: 'cat', name: 'CAT' }, { slug: slug(cat[1]), name: cat[1].toUpperCase() }] : [{ slug: slug(g.model), name: g.model }]).boats.push(...g.boats);
   }
   for (const g of groups(boats, 'gear')) ensure([{ slug: 'gearboxes', name: 'Gearboxes' }, { slug: slug(g.model), name: g.model }]).boats.push(...g.boats);
   const gens = ensure([{ slug: 'generators', name: 'Generators' }]);
@@ -132,5 +133,5 @@ export const folderName = (boats: Boat[], f: string) => findFolder(procedureFold
 export function folderPath(boats: Boat[], f: string): string {
   const parts = f.split('/');
   const names = parts.map((_, i) => folderName(boats, parts.slice(0, i + 1).join('/')));
-  return names[0] === 'EMD' ? names.join(' ') : names.join(' · ');
+  return names[0] === 'EMD' || names[0] === 'CAT' ? names.join(' ') : names.join(' · '); // EMD 710 16cyl, CAT 3612
 }
