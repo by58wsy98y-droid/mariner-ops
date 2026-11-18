@@ -38,7 +38,6 @@ export default function Library({ at }: { at: string[] }) {
           </div>
           <h2 className="page-title">{f?.name ?? path}</h2>
           {f?.slug === 'general' && <p className="small muted">Equipment every boat has. These show on every boat's page.</p>}
-          {f && f.slug !== 'general' && !f.children && f.boats.length > 0 && <p className="small muted">On {f.boats.length} boat{f.boats.length > 1 ? 's' : ''}: {f.boats.map((b) => b.name.replace(/^M\/V\s+/, '')).join(', ')}.</p>}
           {f?.children && <div className="folders">{f.children.map(row)}</div>}
           {(f?.docs.length ?? 0) > 0 && <div className="list">{f!.docs.map((d) => <DocRow key={d.path} c={c} d={d} showFolder={false} />)}</div>}
           {f && !f.children && !f.docs.length && <p className="muted">No procedures in this folder yet.</p>}
