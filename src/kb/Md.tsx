@@ -65,7 +65,8 @@ export default function Md({ c, from, blocks }: { c: Corpus; from: string; block
             if (pics.length && pics.every((x) => x.t === 'img')) {
               const figs = (pics as { src: string; alt: string }[]).map((p, j) => {
                 const src = imgSrc(from, p.src);
-                return src ? <figure key={j}><img src={src} alt={p.alt || 'Picture'} loading="lazy" />{p.alt && <figcaption>{p.alt}</figcaption>}</figure> : null;
+                // tap a picture to open it full size (pinch to zoom on a chart)
+                return src ? <figure key={j}><a href={src} target="_blank" rel="noreferrer"><img src={src} alt={p.alt || 'Picture'} loading="lazy" /></a>{p.alt && <figcaption>{p.alt}</figcaption>}</figure> : null;
               });
               return figs.length > 1 ? <div key={i} className="figrow">{figs}</div> : <Fragment key={i}>{figs}</Fragment>;
             }
