@@ -46,7 +46,7 @@ function useRoute(): string[] {
 
 function useOffline(): Kb['offline'] {
   const sw = typeof navigator !== 'undefined' ? navigator.serviceWorker : undefined;
-  // Only this app's own helper counts (the engine log's, one folder up, can be in charge until it's installed).
+  // Only this app's own helper counts (an old one higher up the site can be in charge until it's installed).
   const mine = () => sw?.controller?.scriptURL === new URL('sw.js', location.href).href;
   const [state, setState] = useState<Kb['offline']>(sw ? (mine() ? 'ready' : 'preparing') : 'none');
   useEffect(() => {
@@ -91,7 +91,7 @@ export default function KbApp({ store, docsList }: { store: KbStore; docsList: D
   else if (screen === 'search') page = <Home />;
   else page = <Fleet kind={screen === 'fleet' && isKind(a) ? a : undefined} model={screen === 'fleet' && isKind(a) && rest.length ? rest.join('/') : undefined} />; // the fleet is where the app opens (a welcome page will go here)
   const tab = screen === 'library' || screen === 'docs' ? screen
-    : (screen === 'doc' || screen === 'edit') && ['procedures', 'knowledge', 'maintenance'].includes(a) ? 'library'
+    : (screen === 'doc' || screen === 'edit') && a === 'procedures' ? 'library'
     : screen === 'settings' || screen === 'files' ? 'settings'
     : screen === 'search' ? 'home'
     : 'fleet'; // the fleet, boats and their pages (and the opening screen)

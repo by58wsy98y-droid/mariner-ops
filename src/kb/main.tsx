@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client';
 import KbApp, { type DocFile } from './KbApp';
 import { KbStore } from './sync';
 import type { KbFile } from './corpus';
-import '../styles.css';
+import './base.css';
 import './kb.css';
 
 interface KbData { builtAt: string; owner: string; repo: string; branch: string; root: string; files: KbFile[]; docs: DocFile[] }

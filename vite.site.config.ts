@@ -1,9 +1,9 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
-// Own site for GitHub Pages: the engine log (index.html) and the knowledge base (kb/index.html),
-// everything bundled so both work with no signal. scripts/build-site.mjs then adds the knowledge-base
-// files and the offline helpers (sw.js) for each app.
+// The Marquette Engineering Knowledge Base on GitHub Pages, at kb/ (kb/index.html), everything bundled so it
+// works with no signal. scripts/build-site.mjs then adds the knowledge-base files and the offline helper.
+// public-site/ holds the app's icons and logo, and the top-level page that forwards to kb/.
 export default defineConfig({
   base: './',
   plugins: [react()],
@@ -12,7 +12,6 @@ export default defineConfig({
     outDir: 'dist-site',
     emptyOutDir: true,
     manifest: true,
-    chunkSizeWarningLimit: 1200,
-    rollupOptions: { input: { main: 'index.html', kb: 'kb/index.html' } },
+    rollupOptions: { input: { kb: 'kb/index.html' } },
   },
 });

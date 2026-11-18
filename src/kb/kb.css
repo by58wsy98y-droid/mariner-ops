@@ -1,4 +1,4 @@
-/* Knowledge base screens. Cards, buttons, header and tab bar come from ../styles.css; the colors and
+/* Knowledge base screens. Cards, buttons, header and tab bar come from base.css; the colors and
    fonts below are Marquette Transportation Company's (marquettetrans.com: dark red #8C0000, charcoal
    #26242E, light gray, Roboto). */
 :root {
@@ -145,7 +145,7 @@ details summary { cursor: pointer; padding-block: 6px; }
 .sidehead.single { font: 700 13px/1.2 var(--font-label); letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
 
 @media print {
-  @page { size: letter portrait; margin: 0.6in; } /* the engine log's sheet prints landscape; these pages don't */
+  @page { size: letter portrait; margin: 0.6in; }
   .print-brand { display: block; margin-bottom: 10pt; padding-bottom: 4pt; border-bottom: 1.5pt solid #000; font: 700 10pt/1.2 var(--font-label); letter-spacing: 0.08em; text-transform: uppercase; }
   .kbapp { display: block !important; padding: 0; }
   .kbapp header, .kbapp nav, .no-print, .banners { display: none !important; }

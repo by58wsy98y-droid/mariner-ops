@@ -1,83 +1,41 @@
-# Daily Engine Maintenance log
+# Marquette Engineering Knowledge Base
 
-A stand-in for the company's Daily Engine Maintenance website while it's down. Same sheets as the
-printed log (fuel/lube/water, draft & tow, Main Engines, Gear Boxes, Generator Engines, Hot Ends,
-Auxiliary Equipment, comments and issues). You type **Today**; **Prev** and **Total** fill themselves in.
+**https://by58wsy98y-droid.github.io/mariner-ops/kb/**
+
+The engineering department's knowledge base for Marquette Transportation Company's River Division fleet:
+each boat's spec sheet, the company's maintenance procedure and technical reference cards filed by the
+equipment they're for, each boat's troubleshooting log and fuel log, and search across all of it. It works on
+a phone with no signal once opened (add it to the home screen: iPhone Safari → Share → Add to Home Screen;
+Android Chrome → ⋮ → Add to Home screen) and prints the cards like the paper originals.
+
+The site is public, like this repository.
 
 ## Using it
-Open **https://claude.ai/artifact/XVneZtspBkQY2DRkb9nwiu** on your phone or laptop, signed in to Claude (the link is private to you).
-Put it on your home screen: iPhone Safari → Share → **Add to Home Screen**; Android Chrome → ⋮ → **Add to Home screen**.
+- **Fleet** (opens first): every boat. A boat's page has its spec sheet, the procedures for its equipment, its
+  troubleshooting log and its fuel log. Z drive boats are labelled.
+- **Library → Procedures**: General equipment (every boat), then by main engine (CAT, Cummins, EMD → 645/710 →
+  12/16/20 cyl), Gearboxes and Generators. A card in a folder shows on every boat with that equipment; one in a
+  higher folder (e.g. EMD → 710) shows on every boat below it. **Follow tick by tick** works through a card one
+  step at a time on the phone; **Done** at the bottom finishes it; **Print** gives the paper layout.
+- **Search**: across every boat and card. A boat's troubleshooting entries show only on its own page and in search.
+- **Fuel log** (from a boat's page): soundings in inches → gallons from the boat's tank tables, the
+  fuel/lube/water chain and truck alerts, saved to `fuel/log-YYYY-MM.md` and `.csv`.
+- **Docs**: finished documents to open or print.
+- **Saving to GitHub** (Settings): with a fine-grained GitHub token (this repository only, Contents: Read and
+  write) new fuel days and troubleshooting entries save back into the files as commits; with no signal they
+  wait on the device. Editing and deleting are switched off for now (`EDITING` in `src/kb/features.ts`).
 
-- **Day**: pick the date (‹ › step a day). On a new day, **Start from [last day]** copies the hours run,
-  chief, draft & tow and open issues; change what's different. **Ran __ hrs → Fill hours** puts the same
-  hours on every hours line of a sheet (lube-oil-added lines are left for you). Everything saves as you type.
-- **Reset** on any line: when a filter is changed, an overhaul is done or an oil sample is taken. The count
-  starts again from the number you give (usually 0), and your note prints under Reset Comments.
-- **Fuel/Lube/Water**: type Used, or type the Ending balance from soundings and Used works itself out.
-  Transferred means transferred off the boat.
-- **History**: every saved day; tap one to open it. **Print several days** makes one PDF of a date range.
-- **Setup & Backup**: boat name, default chief engineer, rename/add/remove lines and sheets, and
-  **Back up** (saves a .json file) / **Restore from file**.
-
-Printing: the page can't open a print dialog itself, so **Save printable PDF** saves the log as a PDF
-laid out like the company sheets; open it and print from there.
-
-## Where the data lives
-Your Claude account, in a space only you can read: the same log on phone and laptop, and a lost phone
-doesn't lose it. The page needs signal to open; if signal drops while it's open, changes are kept on the
-device and sent when signal returns (the line under the boat name says which). Back up now and then anyway.
-
-## Own-site version (GitHub Pages)
-The same app also runs as its own website: **https://by58wsy98y-droid.github.io/mariner-ops/**
-It's published by `.github/workflows/pages.yml` whenever `fuel-log-app` changes
-(Settings → Pages → Source must be **GitHub Actions**).
-
-That version keeps the log on the device (no Claude account), opens with no signal once the line under
-the boat name says "Opens with no signal", and has a **Print** button (or use the browser's own Print).
-Move a log between devices or versions with Backup → Restore.
-On iPhone, add it to the home screen first and use it only from the icon: the icon keeps its own copy of
-the log, and Safari can erase a site's data in a tab after a week unused.
-
-## Marquette Engineering Knowledge Base
-**https://by58wsy98y-droid.github.io/mariner-ops/kb/** (public, like the rest of this repository).
-The engineering department's record of the fleet (each boat's spec sheet, grouped by engine, generator and
-gear model), systems, issues and how they were solved, fuel logs, procedures and checklists. Marquette
-Transportation Company's colors and logo (from marquettetrans.com); the logo files are in `public-site/kb/`.
-The files in `towboat-kb/` are the source of truth (see `towboat-kb/README.md`); the app reads them, and
-its edits are saved back into those same files as commits.
-
-- Opens on the **Fleet** (a welcome page will take its place). **Search** across every boat (each result names its boat and engines); **boat pages** with the spec sheet
-  and that boat's **troubleshooting log** (its entries show only there and in search); entries with
-  *Add to timeline*, *Change status* and similar entries on any boat; **New troubleshooting entry** and **Add a boat** forms;
-  **Fuel**: soundings in inches → gallons from the boat's tank tables, the fuel/lube/water chain and
-  truck alerts like the workbook, saved to `fuel/log-YYYY-MM.md` and `.csv`; procedures with Print; documents.
-- **Edit and delete** (switched off for now: `EDITING` in `src/kb/features.ts`): every page has **Edit** (details as boxes, the text as one big box) and **Delete**;
-  boat pages have **Delete this boat**; fuel days, documents too. **Settings → All files** lists everything
-  to edit, delete, or add a page to any folder. Deleted files stay in GitHub's history. If a file changed
-  on another device while you edited it, both sets of changes are kept (yours win where the same lines changed).
-- **Saving to GitHub:** Settings → paste a fine-grained GitHub token (this repository only,
-  Contents: Read and write). Edits made with no signal wait on the device and save when there's signal.
-  Each save is a commit; the site republishes itself a few minutes later. If one can't be saved (say its
-  file was deleted on another device), Settings → Waiting to save says why and has **Discard**.
-- **iPhone:** add it to the home screen first and use it only from the icon, and paste the key there. The
-  icon keeps its own copy, separate from Safari tabs (changes typed in a tab stay in that tab).
-- **Fuel:** correcting, adding or deleting an earlier day works the next day's Used out again.
-- **Maintenance procedure cards** (`towboat-kb/maintenance/`, one file per MPC): laid out and printed like the
-  company's paper card, first in the Library and search, and on every boat page with that equipment
-  (`equipment: gear` / `engine` / `generator`). **Follow tick by tick** ticks off each step with the time and
-  keeps the place on that phone; **Done** at the bottom finishes the card and clears the ticks for next time.
-- **Tank tables for a new boat:** upload CSVs (`inches,gallons`) to `towboat-kb/boats/<boat>/fuel/tank-tables/`
-  as `tank-2.csv`, `tank-3.csv`… (`tank-2p.csv` / `tank-2s.csv` if port and starboard differ).
+## Where things are
+| | |
+|---|---|
+| `towboat-kb/` | **The content**: boats, procedure cards and their pictures, documents, templates (see `towboat-kb/README.md`) |
+| `src/kb/` | The app: `screens/` (one file per screen), `fleet.ts` (spec sheets, procedure folders), `search.ts`, `fuel.ts`, `markdown.ts`, `sync.ts` (saving to GitHub), `kb.css` (the Marquette look) |
+| `kb/index.html`, `public-site/` | The app's page, icons and logo; `public-site/index.html` forwards the site's top address to `kb/` |
+| `scripts/build-site.mjs` | Packs `towboat-kb/` into the site and writes the offline helper |
+| `.github/workflows/pages.yml` | Tests, builds and publishes the site every time `fuel-log-app` changes |
 
 ## For whoever maintains it
-- `npm test` runs the tests (`src/calc.test.ts` checks the math against the printed 10/20/2026 log in
-  `seed/`; `src/cloudStore.test.ts` covers saving with no signal; `src/pdf.test.ts` the printout).
-- `npm run build:claude` makes the claude.ai page, `dist-web/engine-log.html` (an artifact with the `db`, `user`
-  and `downloads` capabilities; React and jsPDF load from cdnjs). `npm run build:site` makes the own-site version
-  in `dist-site/` (everything bundled, offline helper `sw.js`, saves on the device via `src/localStore.ts`).
-- Code: `src/calc.ts` all arithmetic · `src/cloudStore.ts` saving/sync · `src/pdf.ts` printout ·
-  `src/DayScreen.tsx`, `src/History.tsx`, `src/Setup.tsx` screens · `src/App.tsx` shell.
-- Knowledge base app: `kb/index.html`, `src/kb/` (`fuel.ts` fuel math, `search.ts`, `edits.ts` file edits,
-  `sync.ts` saving to GitHub, `screens/`); tests in `src/kb/*.test.ts`, run against a frozen copy of the
-  files in `src/kb/__fixtures__/` (so editing the real files never fails the publish). `scripts/build-site.mjs` packs
-  `towboat-kb/` into the site (`kb/kb-data.json` + `kb/files/`) and writes each app's offline helper.
+- `npm install`, then `npm test` (the tests use a frozen copy of the files in `src/kb/__fixtures__/`, so
+  editing the real ones never fails a publish) and `npm run build` (the site in `dist-site/`).
+- GitHub → Settings → Pages → Source should be **GitHub Actions**; until then GitHub also publishes the raw
+  branch on each push, and the workflow waits for it so the built site lands last.

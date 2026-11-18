@@ -1,0 +1,119 @@
+/* The knowledge base's basic layout: header band, one column of cards (wider on a laptop), fixed tab bar
+   at the bottom; inputs and buttons sized for a phone. The Marquette colors and fonts are set in kb.css. */
+:root {
+  --bg: #e8edf2;
+  --card: #ffffff;
+  --field: #f2f5f8;
+  --ink: #132130;
+  --muted: #55687a;
+  --line: #ccd6e0;
+  --band: #0f2a44;
+  --band-ink: #f4f7fa;
+  --band-muted: #a9bdd1;
+  --band-warn: #ffd166;
+  --band-bad: #ffb3b3;
+  --accent: #1b5fc6;
+  --accent-ink: #ffffff;
+  --fuel: #f2a900;
+  --fuel-ink: #1d1400;
+  --note-bg: #fff3d1;
+  --note-ink: #4d3a00;
+  --note-line: #e8c55a;
+  --bad: #c0262d;
+  --bad-on: #ffffff;
+  --bad-bg: #fde7e7;
+  --bad-ink: #861b1b;
+  --scrim: rgba(8, 18, 28, 0.55);
+  --font-ui: "Barlow", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-label: "Barlow Semi Condensed", "Barlow", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0b141d; --card: #13202c; --field: #0e1923; --ink: #e4ecf3; --muted: #95a8b9; --line: #253646;
+    --band: #0a1c2e; --band-ink: #eef3f8; --band-muted: #8ea6bd;
+    --accent: #5b9dff; --accent-ink: #061322; --fuel: #f2b230; --fuel-ink: #1d1400;
+    --note-bg: #33290f; --note-ink: #f3dfa2; --note-line: #6e5a1f;
+    --bad: #ff6f6f; --bad-on: #2a0808; --bad-bg: #3a1618; --bad-ink: #ffc8c8; --scrim: rgba(0, 0, 0, 0.6);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0b141d; --card: #13202c; --field: #0e1923; --ink: #e4ecf3; --muted: #95a8b9; --line: #253646;
+  --band: #0a1c2e; --band-ink: #eef3f8; --band-muted: #8ea6bd;
+  --accent: #5b9dff; --accent-ink: #061322; --fuel: #f2b230; --fuel-ink: #1d1400;
+  --note-bg: #33290f; --note-ink: #f3dfa2; --note-line: #6e5a1f;
+  --bad: #ff6f6f; --bad-on: #2a0808; --bad-bg: #3a1618; --bad-ink: #ffc8c8; --scrim: rgba(0, 0, 0, 0.6);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 400 16px/1.4 var(--font-ui); }
+/* Paint the phone's status-bar strip in the header color. */
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--band); }
+.wrap {
+  max-width: 880px;
+  margin-inline: auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.small { font-size: 14px; }
+.muted { color: var(--muted); }
+p { margin: 0; }
+
+header { background: var(--band); color: var(--band-ink); }
+header .wrap { padding-block: 12px 10px; display: grid; gap: 4px; }
+header .top { display: flex; justify-content: space-between; align-items: baseline; gap: 4px 12px; flex-wrap: wrap; }
+header h1 { margin: 0; font: 700 19px/1.2 var(--font-label); letter-spacing: 0.06em; text-transform: uppercase; text-wrap: balance; }
+.sync { font-size: 13px; color: var(--band-muted); }
+.sync.is-warn { color: var(--band-warn); }
+.sync.is-bad { color: var(--band-bad); }
+
+.banners { display: grid; gap: 10px; padding-block: 12px 0; }
+.banner { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 10px; }
+.banner > div { min-width: 0; }
+.banner.warnbox { background: var(--bad-bg); color: var(--bad-ink); font-weight: 600; }
+.banner button { white-space: nowrap; }
+
+main { padding-block: 12px; }
+.screen { display: grid; gap: 12px; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px; display: grid; gap: 12px; min-width: 0; }
+h2 { margin: 0; font: 700 16px/1.2 var(--font-label); letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink); }
+h3 { margin: 4px 0 0; font: 700 14px/1.2 var(--font-label); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+
+label { display: block; font: 600 13px/1.3 var(--font-label); letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); }
+input, select, textarea {
+  display: block; width: 100%; min-height: 48px; margin-top: 4px; padding: 8px 10px;
+  font: 500 18px/1.25 var(--font-ui); font-variant-numeric: tabular-nums; text-transform: none; letter-spacing: normal;
+  color: var(--ink); background: var(--field); border: 1px solid var(--line); border-radius: 8px;
+}
+textarea { resize: vertical; font-size: 16px; }
+input.bad { border-color: var(--bad); box-shadow: 0 0 0 2px var(--bad); }
+input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-visible, summary:focus-visible, tr:focus-visible {
+  outline: 3px solid var(--accent); outline-offset: 2px;
+}
+
+button {
+  min-height: 48px; padding: 0 18px; border: 0; border-radius: 10px; cursor: pointer;
+  font: 600 17px/1.2 var(--font-ui); background: var(--accent); color: var(--accent-ink);
+}
+button:disabled { opacity: 0.45; cursor: default; }
+button.secondary { background: var(--field); color: var(--ink); border: 1px solid var(--line); }
+button.big { width: 100%; min-height: 60px; font-size: 20px; }
+.danger-text { color: var(--bad) !important; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.tablewrap { overflow-x: auto; }
+
+nav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 5; background: var(--card); border-top: 1px solid var(--line); padding-bottom: env(safe-area-inset-bottom, 0px); }
+nav .wrap { display: flex; }
+nav button {
+  flex: 1; min-height: 60px; border-radius: 0; background: transparent; color: var(--muted);
+  font: 700 15px/1.1 var(--font-label); letter-spacing: 0.06em; text-transform: uppercase;
+}
+nav button.on { color: var(--accent); box-shadow: inset 0 3px 0 var(--accent); }
+
+.boot { max-width: 520px; margin: 48px auto; padding: 0 max(16px, env(safe-area-inset-left, 0px)); display: grid; gap: 12px; }
+.boot h1 { margin: 0; font: 700 20px/1.2 var(--font-label); letter-spacing: 0.06em; text-transform: uppercase; }

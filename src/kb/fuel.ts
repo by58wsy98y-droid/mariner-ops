@@ -1,4 +1,4 @@
-// Fuel log arithmetic, matching the boat's workbook (docs/Steven_Crowley_Fuel_Log.xlsx, Daily Log):
+// Fuel log arithmetic, matching the company's daily fuel log workbook:
 //   gallons per tank = tank table at the sounding, half inches interpolated, rounded to the gallon
 //   total fuel = port + starboard;  used = yesterday's total + received - today's total
 //   room to full = capacity - total;  trucks that fit = whole truck loads in the room

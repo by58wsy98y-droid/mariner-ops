@@ -1,13 +1,13 @@
 // Turns the knowledge-base files into documents the app can list, show and search.
-// Paths are relative to the knowledge-base folder, e.g. "boats/a-steven-crowley/boat.md".
+// Paths are relative to the knowledge-base folder, e.g. "boats/whitney-ann-cruse/boat.md".
 import { fmList, fmText, parseFrontmatter, type FmValue } from './frontmatter';
 import { parseMarkdown, type Block } from './markdown';
 
 export interface KbFile { path: string; text: string }
 
-export type DocType = 'boat' | 'system' | 'issue' | 'fuel' | 'procedure' | 'knowledge';
+export type DocType = 'boat' | 'system' | 'issue' | 'fuel' | 'procedure';
 export const TYPE_LABEL: Record<DocType, string> = {
-  boat: 'Boats', system: 'Systems', issue: 'Troubleshooting log', fuel: 'Fuel', procedure: 'Procedures', knowledge: 'Knowledge',
+  boat: 'Boats', system: 'Systems', issue: 'Troubleshooting log', fuel: 'Fuel', procedure: 'Procedures',
 };
 
 export interface Doc {
@@ -38,7 +38,6 @@ export function docType(path: string): DocType | null {
   if (/^boats\/[^/]+\/issues\/[^/]+\.md$/.test(path)) return 'issue';
   if (/^boats\/[^/]+\/fuel\/[^/]+\.md$/.test(path)) return 'fuel';
   if (/^procedures\/(?:[^/]+\/){0,3}[^/]+\.md$/.test(path) && !/README\.md$/.test(path)) return 'procedure'; // procedures/<folders…>/x.md, e.g. emd/710/16cyl
-  if (/^knowledge\/[^/]+\.md$/.test(path) && !/README\.md$/.test(path)) return 'knowledge';
   return null; // README, templates, app-spec, docs/ and CSV files aren't documents
 }
 

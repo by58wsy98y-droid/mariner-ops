@@ -1,8 +1,8 @@
-# Publishes the engine log and the knowledge base to GitHub Pages every time fuel-log-app changes.
+# Publishes the Marquette Engineering Knowledge Base to GitHub Pages every time fuel-log-app changes.
 # One branch only: the knowledge base app saves its edits to the branch the site was built from, so two
 # publishing branches would split the files between them. (If the work moves to main, change it here.)
 # Needs Settings → Pages → Source: GitHub Actions.
-name: Publish engine log site
+name: Publish the knowledge base
 on:
   push:
     branches: [fuel-log-app]
@@ -29,7 +29,7 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm test
-      - run: npm run build:site
+      - run: npm run build
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

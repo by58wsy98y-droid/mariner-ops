@@ -1,5 +1,5 @@
 ---
-boat: M/V A. Steven Crowley
+boat: M/V Whitney Ann Cruse
 system: fuel
 last_updated: 2026-10-27
 ---
@@ -48,6 +48,6 @@ filled + deck fill → next tank open BEFORE closing the current one → never s
 with the dock pumping → slow the dock before the last tank tops off.
 
 ## Fuel log
-Daily log workbook: `/docs/Steven_Crowley_Fuel_Log.xlsx` (type inches, gallons look up from the
-tables, alerts when a truck load fits). Company form fields: previous → received → total → on hand
-→ used, for fuel, lube oil and potable water.
+Kept in the knowledge base's Fuel log for this boat (inches → gallons from the tank tables, alerts when a
+truck load fits). Company form fields: previous → received → total → on hand → used, for fuel, lube oil
+and potable water.

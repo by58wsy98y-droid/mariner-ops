@@ -1,9 +1,9 @@
 ---
-boat: M/V A. Steven Crowley
+boat: M/V Whitney Ann Cruse
 source: Steve's fueling sheet (regular chief), confirmed in practice 2026-10-23
 ---
 
-# Fueling procedure — A. Steven Crowley
+# Fueling procedure — Whitney Ann Cruse
 
 ## Before the hose
 1. **Close every fill**, including the 3s and 4s that are open for running.

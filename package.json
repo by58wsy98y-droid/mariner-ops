@@ -1,12 +1,10 @@
 {
-  "name": "engine-log",
+  "name": "marquette-engineering-kb",
   "private": true,
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "build": "npm run build:claude && npm run build:site",
-    "build:claude": "tsc --noEmit && vite build && node scripts/build-web.mjs",
-    "build:site": "tsc --noEmit && vite build -c vite.site.config.ts && node scripts/build-site.mjs",
+    "build": "tsc --noEmit && vite build -c vite.site.config.ts && node scripts/build-site.mjs",
     "test": "vitest run"
   },
   "dependencies": {
@@ -18,8 +16,6 @@
     "@types/react": "18.3.12",
     "@types/react-dom": "18.3.1",
     "@vitejs/plugin-react": "4.3.3",
-    "jspdf": "^2.5.1",
-    "jspdf-autotable": "^3.8.2",
     "typescript": "5.6.3",
     "vite": "5.4.10",
     "vitest": "2.1.4"

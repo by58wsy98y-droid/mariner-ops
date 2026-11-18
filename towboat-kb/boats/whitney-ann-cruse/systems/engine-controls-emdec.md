@@ -1,5 +1,5 @@
 ---
-boat: M/V A. Steven Crowley
+boat: M/V Whitney Ann Cruse
 system: engine controls / EMDEC
 last_updated: 2026-10-27
 ---
@@ -37,7 +37,7 @@ panel can't decode — read them to Inland as-is.
 
 ## Retraining the throttles
 Manual section 9.3.3 (learn min/max at four lever positions, engine OFF / ignition ON) and 9.4
-(check running). Plain-language step sheet: `/docs/Throttle_Retraining_Simple_Steps.docx`.
+(check running).
 **Not yet performed as of 2026-10-27.** Should be done after any ERIM/CSIM change.
 
 ## Diagnostic access
