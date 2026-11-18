@@ -85,5 +85,23 @@ describe('procedures in folders', () => {
     const [p] = parseMarkdown('![Figure 1](images/a.jpg) ![Figure 2](images/b.jpg)');
     expect(p.t === 'p' && p.c.filter((x) => x.t === 'img')).toHaveLength(2);
   });
+
+  it('a line ending in "\\" keeps its line break; other lines run together', () => {
+    const [p] = parseMarkdown('CLUTCH AIR SUPPLY:\\\nSupply Pressure (Nominal): 140 +/-5 psig\\\nLow Pressure Alarm Setpoint: 125 psig\nstill the same line');
+    expect(p).toEqual({ t: 'p', c: [{ t: 'text', v: 'CLUTCH AIR SUPPLY:\nSupply Pressure (Nominal): 140 +/-5 psig\nLow Pressure Alarm Setpoint: 125 psig still the same line' }] });
+  });
+
+  it('Gearboxes → one folder per gear maker, between EMD and Generators', () => {
+    const c3 = buildCorpus([
+      { path: 'procedures/gearboxes/falk/air-panel.md', text: '---\ntitle: Falk air panel\nmpc_code: MPC-E-014-PRN\n---\n# Falk air panel\n' },
+      boat('a', 'engine_model: EMD 710 16cyl\ngear_make: Falk\ngenerator_model: CAT 3306'),
+      boat('b', 'engine_model: CAT 3612\ngear_make: Reintjes'),
+    ]);
+    const fs = procedureFolders(c3.boats, c3.docs);
+    expect(fs.map((f) => f.slug)).toEqual(['general', 'cat-3612', 'emd', 'gearboxes', 'generators']);
+    expect(findFolder(fs, 'gearboxes')!.children!.map((f) => [f.name, f.boats.length, f.docs.length])).toEqual([['Falk', 1, 1], ['Reintjes', 1, 0]]);
+    expect(proceduresFor(c3.boats.find((b) => b.slug === 'a')!, fs).map((d) => d.title)).toEqual(['Falk air panel']);
+    expect(proceduresFor(c3.boats.find((b) => b.slug === 'b')!, fs)).toEqual([]);
+  });
 });
 

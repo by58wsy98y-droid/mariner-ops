@@ -3,7 +3,7 @@
 // The file itself is plain markdown: "## Step …" for each step, "### Parts required" etc. for the boxes,
 // and "### 1. Gather Tools" for each task.
 import { useEffect, useState } from 'react';
-import type { Block } from '../markdown';
+import { inlineText, type Block } from '../markdown';
 import type { Corpus, Doc } from '../corpus';
 import { fmText } from '../frontmatter';
 import Md from '../Md';
@@ -24,8 +24,13 @@ function splitAt(blocks: Block[], level: number): Part[] {
 }
 
 const TASK = /^(\d+)[.)]\s+(.*)$/;
-// a step with pictures may run onto the next page when printed; the others are kept whole
+// Printing: a short step is kept whole on one page. A long one (or one with pictures) runs on across pages,
+// with its title held to its first paragraph so a title never sits alone at the bottom of a page.
 const hasPics = (blocks: Block[]) => blocks.some((b) => b.t === 'p' && b.c.some((x) => x.t === 'img'));
+const textLength = (blocks: Block[]) => blocks.reduce((n, b) =>
+  n + (b.t === 'p' || b.t === 'quote' || b.t === 'h' ? inlineText(b.c).length : b.t === 'list' ? b.items.reduce((m, it) => m + inlineText(it).length, 0)
+    : b.t === 'table' ? [b.head, ...b.rows].flat().reduce((m, cell) => m + inlineText(cell).length, 0) : b.t === 'code' ? b.v.length : 0), 0);
+const flows = (blocks: Block[]) => hasPics(blocks) || textLength(blocks) > 900;
 
 // Working through a card tick by tick: which tasks are ticked and when, kept on this device per card.
 interface Run { on: boolean; ticked: Record<string, string> } // task number -> time ticked (ISO)
@@ -97,13 +102,13 @@ export default function MpcCard({ c, doc }: { c: Corpus; doc: Doc }) {
     <div className={`mpc${run.on ? ' following' : ''}`}>
       <div className="mpc-head">
         {cell('Procedure title', doc.title, 'mpc-title')}
-        {cell('MPC code', f('mpc_code'))}
+        {cell(f('code_label') || 'MPC code', f('mpc_code'))}
         {cell('Frequency', f('frequency'))}
         {cell('Department / category', f('department'))}
         {cell('Revision date', f('revision_date'))}
         {cell('Applicable vessels / units', f('applies_to'), 'wide')}
       </div>
-      <div className="mpc-banner">Maintenance procedure card</div>
+      <div className="mpc-banner">{f('card') || 'Maintenance procedure card'}</div>
       {steps.map((step, i) => (
         <section key={i} className="mpc-step">
           {step.head && <div className="mpc-bar">{step.head.text}</div>}
@@ -112,7 +117,8 @@ export default function MpcCard({ c, doc }: { c: Corpus; doc: Doc }) {
               const task = part.head && TASK.exec(part.head.text);
               if (task)
                 return (
-                  <div key={j} id={`task-${task[1]}`} className={`mpc-task${hasPics(part.body) ? ' has-pics' : ''}${run.ticked[task[1]] ? ' done' : ''}${run.on && task[1] === next ? ' current' : ''}`}>
+                  <div key={j} id={`task-${task[1]}`} className={`mpc-task${flows(part.body) ? ' flows' : ''}${run.ticked[task[1]] ? ' done' : ''}${run.on && task[1] === next ? ' current' : ''}`}>
+                    <div className="mpc-keep">
                     <div className="mpc-task-head">
                       <span className="mpc-num">{task[1]}</span>
                       {run.on ? (
@@ -125,7 +131,11 @@ export default function MpcCard({ c, doc }: { c: Corpus; doc: Doc }) {
                       <b>{task[2]}</b>
                       {run.ticked[task[1]] && <span className="mpc-when">{clock(run.ticked[task[1]])}</span>}
                     </div>
-                    {part.body.length > 0 && <div className="mpc-task-body"><Md c={c} from={doc.path} blocks={part.body} /></div>}
+                    {flows(part.body) && part.body.length > 0 && <div className="mpc-task-body first"><Md c={c} from={doc.path} blocks={part.body.slice(0, 1)} /></div>}
+                    </div>
+                    {part.body.length > (flows(part.body) ? 1 : 0) && (
+                      <div className={`mpc-task-body${flows(part.body) ? ' rest' : ''}`}><Md c={c} from={doc.path} blocks={flows(part.body) ? part.body.slice(1) : part.body} /></div>
+                    )}
                   </div>
                 );
               if (!part.head) return part.body.length ? <div key={j} className="mpc-free"><Md c={c} from={doc.path} blocks={part.body} /></div> : null;

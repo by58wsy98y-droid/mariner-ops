@@ -53,7 +53,7 @@ export const fleetHref = (kind: Kind, model: string) => `#/fleet/${kind}/${encod
 
 /**
  * Procedure folders, A–Z with General equipment first and Generators last:
- *   general/ · cat-3612/ · emd/{645,710}/{12cyl,16cyl,20cyl}/ · generators/<model>/
+ *   general/ · cat-3612/ · emd/{645,710}/{12cyl,16cyl,20cyl}/ · gearboxes/<maker>/ · generators/<model>/
  * A boat is in the folder for its engine_model ("EMD 710 16cyl" -> emd/710/16cyl) and its generator_model;
  * a folder higher up covers every boat below it.
  */
@@ -87,6 +87,7 @@ export function procedureFolders(boats: Boat[], docs: Doc[]): Folder[] {
     const m = EMD.exec(g.model);
     ensure(m ? emd(m[1], m[2]) : [{ slug: slug(g.model), name: g.model }]).boats.push(...g.boats);
   }
+  for (const g of groups(boats, 'gear')) ensure([{ slug: 'gearboxes', name: 'Gearboxes' }, { slug: slug(g.model), name: g.model }]).boats.push(...g.boats);
   const gens = ensure([{ slug: 'generators', name: 'Generators' }]);
   for (const g of groups(boats, 'generator')) ensure([{ slug: 'generators', name: 'Generators' }, { slug: slug(g.model), name: g.model }]).boats.push(...g.boats);
   // folders that have files but no boats yet

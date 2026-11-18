@@ -63,7 +63,11 @@ export function parseMarkdown(md: string): Block[] {
   const lines = md.replace(/\r\n/g, '\n').split('\n');
   const blocks: Block[] = [];
   let para: string[] = [];
-  const endPara = () => { if (para.length) blocks.push({ t: 'p', c: parseInline(para.join(' ')) }); para = []; };
+  // lines run together into one paragraph, except after a line ending in "\" (kept on its own line)
+  const endPara = () => {
+    if (para.length) blocks.push({ t: 'p', c: parseInline(para.reduce((out, l, i) => (i === 0 ? l : out.endsWith('\\') ? `${out.slice(0, -1)}\n${l}` : `${out} ${l}`), '').replace(/\\$/, '')) });
+    para = [];
+  };
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     if (/^```/.test(line)) {
