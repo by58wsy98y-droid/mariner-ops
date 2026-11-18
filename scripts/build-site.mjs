@@ -42,7 +42,7 @@ function closure(entry) {
     if (!m || out.has(m.file)) return;
     out.add(m.file);
     for (const c of m.css ?? []) out.add(c);
-    for (const i of m.imports ?? []) visit(i); // static imports only: jsPDF's optional extras stay out
+    for (const i of m.imports ?? []) visit(i); // static imports only
   };
   visit(entry);
   return [...out];

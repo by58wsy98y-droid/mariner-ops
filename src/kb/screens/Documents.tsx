@@ -23,7 +23,7 @@ export default function Documents() {
     setMsg('Saving documents on this device…');
     let ok = 0;
     for (const d of kept) { try { const r = await fetch(fileHref(d.path)); if (r.ok) { await r.blob(); ok++; } } catch { /* no signal */ } }
-    setMsg(ok === kept.length ? `All ${docsList.length} documents and the pictures on cards will open with no signal.` : `Saved ${ok} of ${kept.length}. Try again with better signal for the rest.`);
+    setMsg(ok === kept.length ? (docsList.length ? `All ${docsList.length} documents and the pictures on cards will open with no signal.` : 'The pictures on the cards will show with no signal.') : `Saved ${ok} of ${kept.length}. Try again with better signal for the rest.`);
   };
   return (
     <div className="screen">
@@ -46,7 +46,8 @@ export default function Documents() {
             );
           })}
         </div>
-        <button className="secondary" onClick={keepAll}>Keep all for no signal</button>
+        {!docsList.length && <p className="muted">No documents yet. They go in the towboat-kb/docs/ folder on GitHub, with a line in docs/README.md saying what each one is.</p>}
+        <button className="secondary" onClick={keepAll}>{docsList.length ? 'Keep all for no signal' : 'Keep the card pictures for no signal'}</button>
         {msg && <p className="small" role="status">{msg}</p>}
       </section>
     </div>

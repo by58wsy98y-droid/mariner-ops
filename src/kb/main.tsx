@@ -1,4 +1,4 @@
-// Towboat Knowledge Base (own site, /kb/). The files come in kb-data.json, made when the site is published.
+// Marquette Engineering Knowledge Base (/kb/). The files come in kb-data.json, made when the site is published.
 import { createRoot } from 'react-dom/client';
 import KbApp, { type DocFile } from './KbApp';
 import { KbStore } from './sync';

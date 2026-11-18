@@ -1,4 +1,4 @@
-// Fuel log arithmetic, matching the company's daily fuel log workbook:
+// Fuel log arithmetic, following the company fuel form (previous → received → total → on hand → used):
 //   gallons per tank = tank table at the sounding, half inches interpolated, rounded to the gallon
 //   total fuel = port + starboard;  used = yesterday's total + received - today's total
 //   room to full = capacity - total;  trucks that fit = whole truck loads in the room

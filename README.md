@@ -11,7 +11,7 @@ Android Chrome → ⋮ → Add to Home screen) and prints the cards like the pap
 The site is public, like this repository.
 
 ## Using it
-- **Fleet** (opens first): every boat. A boat's page has its spec sheet, the procedures for its equipment, its
+- **Fleet** (opens first): every boat, and **+ Add a boat**. A boat's page has its spec sheet, the procedures for its equipment, its
   troubleshooting log and its fuel log. Z drive boats are labelled.
 - **Library → Procedures**: General equipment (every boat), then by main engine (CAT, Cummins, EMD → 645/710 →
   12/16/20 cyl), Gearboxes and Generators. A card in a folder shows on every boat with that equipment; one in a
@@ -22,8 +22,8 @@ The site is public, like this repository.
   fuel/lube/water chain and truck alerts, saved to `fuel/log-YYYY-MM.md` and `.csv`.
 - **Docs**: finished documents to open or print.
 - **Saving to GitHub** (Settings): with a fine-grained GitHub token (this repository only, Contents: Read and
-  write) new fuel days and troubleshooting entries save back into the files as commits; with no signal they
-  wait on the device. Editing and deleting are switched off for now (`EDITING` in `src/kb/features.ts`).
+  write) new boats, fuel days (and a boat's fuel alert settings), troubleshooting entries, timeline rows and
+  status changes save back into the files as commits; with no signal they wait on the device. Editing and deleting are switched off for now (`EDITING` in `src/kb/features.ts`).
 
 ## Where things are
 | | |

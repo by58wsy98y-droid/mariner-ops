@@ -38,7 +38,7 @@ export function docType(path: string): DocType | null {
   if (/^boats\/[^/]+\/issues\/[^/]+\.md$/.test(path)) return 'issue';
   if (/^boats\/[^/]+\/fuel\/[^/]+\.md$/.test(path)) return 'fuel';
   if (/^procedures\/(?:[^/]+\/){0,3}[^/]+\.md$/.test(path) && !/README\.md$/.test(path)) return 'procedure'; // procedures/<folders…>/x.md, e.g. emd/710/16cyl
-  return null; // README, templates, app-spec, docs/ and CSV files aren't documents
+  return null; // README, templates, docs/ and CSV files aren't documents
 }
 
 export const boatOf = (path: string) => /^boats\/([^/]+)\//.exec(path)?.[1];

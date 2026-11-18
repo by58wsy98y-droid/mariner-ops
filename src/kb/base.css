@@ -117,3 +117,10 @@ nav button.on { color: var(--accent); box-shadow: inset 0 3px 0 var(--accent); }
 
 .boot { max-width: 520px; margin: 48px auto; padding: 0 max(16px, env(safe-area-inset-left, 0px)); display: grid; gap: 12px; }
 .boot h1 { margin: 0; font: 700 20px/1.2 var(--font-label); letter-spacing: 0.06em; text-transform: uppercase; }
+
+/* Printing: white paper and black ink, whatever the phone's dark/light setting. */
+@media print {
+  :root { padding: 0 !important; color-scheme: light !important; }
+  body { background: #fff !important; color: #000 !important; }
+  body::before { display: none !important; }
+}
