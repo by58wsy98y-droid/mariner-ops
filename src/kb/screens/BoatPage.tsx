@@ -10,7 +10,7 @@ import { DocRow } from './parts';
 
 const LABELS: Record<string, string> = {
   type: 'Type', controls: 'Controls', rated_rpm: 'Rated rpm', idle_rpm: 'Idle rpm', dc_system: 'DC system', steering: 'Steering',
-  fuel_capacity_full: 'Usual fuel top-off', fuel_capacity_gal: 'Capacity for truck alerts (gal)', truck_load_gal: 'Truck load (gal)',
+  spec_note: 'Note', fuel_capacity_full: 'Usual fuel top-off', fuel_capacity_gal: 'Capacity for truck alerts (gal)', truck_load_gal: 'Truck load (gal)',
 };
 // shown elsewhere on the page (the spec sheet, the title, the footer line)
 const SHOWN = new Set(['boat', 'division', 'spec_source', 'last_updated', ...Object.keys(SPEC_LABEL)]);
@@ -76,7 +76,7 @@ export default function BoatPage({ slug }: { slug: string }) {
   return (
     <div className="screen">
       <section className="card">
-        <h2 className="page-title">{boat.name}</h2>
+        <h2 className="page-title">{boat.name}{spec(boat, 'propulsion') && <> <span className="chip prop">{spec(boat, 'propulsion')}</span></>}</h2>
         {spec(boat, 'former_names') && <p className="muted">Formerly {spec(boat, 'former_names')}</p>}
         <SpecSheet c={c} boat={boat} />
         {Object.entries(boat.doc.fm).some(([k, v]) => !hidden(k, fmText(v)) && fmText(v)) && (

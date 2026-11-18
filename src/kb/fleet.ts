@@ -15,7 +15,7 @@ export const isKind = (k: string | undefined): k is Kind => KINDS.some((x) => x.
 
 /** Spec-sheet field names, in the order of the company sheet. */
 export const SPEC_LABEL: Record<string, string> = {
-  former_names: 'Former names', official_number: 'Official number', horsepower: 'Horsepower', size: 'Size (length x breadth, ft)',
+  former_names: 'Former names', propulsion: 'Propulsion', official_number: 'Official number', horsepower: 'Horsepower', size: 'Size (length x breadth, ft)',
   built: 'Built (year)', repowered: 'Repowered (year)', builder: 'Builder', home_port: 'Home port',
   engines: 'Main engines', engine_model: 'Main engine model', generators: 'Generators', generator_model: 'Generator model',
   gear: 'Gear ratio', gear_make: 'Gear maker', wheels: 'Wheels', kort_nozzles: 'Kort nozzles',
@@ -53,15 +53,20 @@ export const fleetHref = (kind: Kind, model: string) => `#/fleet/${kind}/${encod
 
 /**
  * Procedure folders, A–Z with General equipment first and Generators last:
- *   general/ · cat/{3606,3612}/ · emd/{645,710}/{12cyl,16cyl,20cyl}/ · gearboxes/<maker>/ · generators/<model>/
- * A boat is in the folder for its engine_model ("EMD 710 16cyl" -> emd/710/16cyl) and its generator_model;
- * a folder higher up covers every boat below it.
+ *   general/ · cat/3612/ · cummins/qsk60/ · emd/{645,710}/{12cyl,16cyl,20cyl}/ · gearboxes/<maker>/
+ *   · z-drives/<maker>/ · generators/<make>/<model>/
+ * Engines and generators go by make, then model ("Cummins QSM11" -> cummins/qsm11; "EMD 710 16cyl" ->
+ * emd/710/16cyl). A Z drive boat's drive maker goes under Z drives rather than Gearboxes. A folder higher
+ * up covers every boat below it.
  */
-export interface Folder { slug: string; name: string; boats: Boat[]; docs: Doc[]; children?: Folder[] }
+export interface Folder { slug: string; name: string; boats: Boat[]; docs: Doc[]; children?: Folder[]; tight?: boolean }
 const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 const unknownName = (f: string) => f.split('/').pop()!.replace(/-/g, ' ').toUpperCase();
 const EMD = /^EMD\s+(645|710)\s+(12|16|20)\s*cyl$/i;
-const CAT = /^CAT\s+(\d{4}[A-Z]?)$/i; // CAT 3606, CAT 3612 → one CAT folder with a folder per model
+/** "John Deere 6081" -> make "John Deere", model "6081" (a one-word name is a make on its own). */
+const makeModel = (m: string) => { const i = m.trim().lastIndexOf(' '); return i > 0 ? [m.slice(0, i).trim(), m.slice(i + 1)] : [m.trim(), '']; };
+const byMake = (m: string) => { const [make, model] = makeModel(m); return model ? [{ slug: slug(make), name: make, tight: true }, { slug: slug(model), name: model }] : [{ slug: slug(make), name: make }]; };
+export const isZDrive = (b: Boat) => /z[\s-]*drive/i.test(spec(b, 'propulsion'));
 
 export function procedureFolders(boats: Boat[], docs: Doc[]): Folder[] {
   const procs = docs.filter((d) => d.type === 'procedure');
@@ -70,27 +75,30 @@ export function procedureFolders(boats: Boat[], docs: Doc[]): Folder[] {
     .sort((a, b) => fmText(a.fm.mpc_code).localeCompare(fmText(b.fm.mpc_code)) || a.title.localeCompare(b.title));
   const top: Folder[] = [];
   // the folder at this path, made (with any above it) if it isn't there yet
-  const ensure = (parts: { slug: string; name: string }[]): Folder => {
+  const ensure = (parts: { slug: string; name: string; tight?: boolean }[]): Folder => {
     let list = top, path = '', f: Folder | undefined;
     for (const p of parts) {
       path = path ? `${path}/${p.slug}` : p.slug;
       f = list.find((x) => x.slug === path);
-      if (!f) list.push((f = { slug: path, name: p.name, boats: [], docs: inFolder(path), children: [] }));
+      if (!f) list.push((f = { slug: path, name: p.name, boats: [], docs: inFolder(path), children: [], tight: p.tight }));
       list = f.children!;
     }
     return f!;
   };
   const general = ensure([{ slug: 'general', name: 'General equipment' }]);
   general.boats = boats;
-  const emd = (series: string, cyl: string) => [{ slug: 'emd', name: 'EMD' }, { slug: series, name: series }, { slug: `${cyl}cyl`, name: `${cyl}cyl` }];
+  const emd = (series: string, cyl: string) => [{ slug: 'emd', name: 'EMD', tight: true }, { slug: series, name: series, tight: true }, { slug: `${cyl}cyl`, name: `${cyl}cyl` }];
   if (boats.some((b) => /^EMD\b/i.test(modelOf(b, 'engine')))) for (const s of ['645', '710']) for (const n of ['12', '16', '20']) ensure(emd(s, n));
   for (const g of groups(boats, 'engine')) {
-    const m = EMD.exec(g.model), cat = CAT.exec(g.model);
-    ensure(m ? emd(m[1], m[2]) : cat ? [{ slug: 'cat', name: 'CAT' }, { slug: slug(cat[1]), name: cat[1].toUpperCase() }] : [{ slug: slug(g.model), name: g.model }]).boats.push(...g.boats);
+    const m = EMD.exec(g.model);
+    ensure(m ? emd(m[1], m[2]) : byMake(g.model)).boats.push(...g.boats);
   }
-  for (const g of groups(boats, 'gear')) ensure([{ slug: 'gearboxes', name: 'Gearboxes' }, { slug: slug(g.model), name: g.model }]).boats.push(...g.boats);
+  // a conventional boat's reduction gear under Gearboxes; a Z drive boat's drive under Z drives
+  for (const g of groups(boats, 'gear'))
+    for (const [where, name, bs] of [['gearboxes', 'Gearboxes', g.boats.filter((b) => !isZDrive(b))], ['z-drives', 'Z drives', g.boats.filter(isZDrive)]] as const)
+      if (bs.length) ensure([{ slug: where, name }, { slug: slug(g.model), name: g.model }]).boats.push(...bs);
   const gens = ensure([{ slug: 'generators', name: 'Generators' }]);
-  for (const g of groups(boats, 'generator')) ensure([{ slug: 'generators', name: 'Generators' }, { slug: slug(g.model), name: g.model }]).boats.push(...g.boats);
+  for (const g of groups(boats, 'generator')) ensure([{ slug: 'generators', name: 'Generators' }, ...byMake(g.model)]).boats.push(...g.boats);
   // folders that have files but no boats yet
   for (const f of new Set(procs.flatMap((d) => [procedureFolder(d.path), ...fmList(d.fm.also_in)])))
     if (!findFolder(top, f)) ensure(f.split('/').map((s) => ({ slug: s, name: unknownName(s) })));
@@ -129,9 +137,17 @@ export function proceduresFor(b: Boat, folders: Folder[]): Doc[] {
 /** "general" -> "General equipment", "cat-3612" -> "CAT 3612", "generators/cat-3306" -> "CAT 3306". */
 export const folderName = (boats: Boat[], f: string) => findFolder(procedureFolders(boats, []), f)?.name ?? unknownName(f);
 
-/** The whole way down to a folder, e.g. "EMD 710 20cyl", "Generators · CAT 3306", "General equipment". */
+/** The whole way down to a folder: "EMD 710 20cyl", "CAT 3612", "Generators · CAT 3306", "General equipment". */
 export function folderPath(boats: Boat[], f: string): string {
+  const all = procedureFolders(boats, []);
   const parts = f.split('/');
-  const names = parts.map((_, i) => folderName(boats, parts.slice(0, i + 1).join('/')));
-  return names[0] === 'EMD' || names[0] === 'CAT' ? names.join(' ') : names.join(' · '); // EMD 710 16cyl, CAT 3612
+  let out = '';
+  parts.forEach((_, i) => {
+    const here = parts.slice(0, i + 1).join('/');
+    const above = i ? findFolder(all, parts.slice(0, i).join('/')) : undefined;
+    // a group (Gearboxes, Z drives, Generators) is followed by " · "; a make by its model with a space
+    const group = i === 1 && ['gearboxes', 'z-drives', 'generators'].includes(parts[0]);
+    out += (i ? (group || above?.tight === false ? ' · ' : ' ') : '') + folderName(boats, here);
+  });
+  return out;
 }

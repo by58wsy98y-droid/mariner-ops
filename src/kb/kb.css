@@ -277,3 +277,5 @@ details summary { cursor: pointer; padding-block: 6px; }
 @media print { .mpc-foot { border-color: #000 !important; } .figrow { break-inside: avoid; } }
 .mpc-task-body.first { padding-bottom: 0; }
 .mpc-task-body.rest { padding-top: 10px; }
+.chip.prop { font: 700 12px/1.5 var(--font-label); letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent-text); border-color: currentColor; background: transparent; vertical-align: middle; white-space: nowrap; }
+.page-title .chip.prop { font-size: 13px; }

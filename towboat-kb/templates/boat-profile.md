@@ -3,6 +3,7 @@ boat:
 former_names:
 company:
 division:
+propulsion:
 official_number:
 horsepower:
 size:
@@ -33,6 +34,7 @@ idle_rpm:
 dc_system:
 steering:
 fuel_capacity_full:
+spec_note:
 spec_source:
 last_updated:
 ---

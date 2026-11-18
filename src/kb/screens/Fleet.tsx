@@ -30,6 +30,7 @@ export default function Fleet({ kind, model }: { kind?: Kind; model?: string }) 
               <a key={b.slug} className="docrow" href={`#/boat/${b.slug}`}>
                 <span className="docrow-top">
                   <span className="docrow-title">{b.name}</span>
+                  {spec(b, 'propulsion') && <span className="chip prop">{spec(b, 'propulsion')}</span>}
                   {open > 0 && <span className="count small">{open} open</span>}
                 </span>
                 {spec(b, 'former_names') && <span className="docrow-meta">ex {spec(b, 'former_names')}</span>}
