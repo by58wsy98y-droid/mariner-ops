@@ -199,6 +199,7 @@ details summary { cursor: pointer; padding-block: 6px; }
 .md img { max-width: 100%; height: auto; border: 1px solid var(--line); border-radius: 4px; }
 .md figcaption { font-size: 13px; color: var(--muted); }
 .md p.sub { padding-left: 18px; margin-top: -4px; }
+.md p.sub2 { padding-left: 36px; }
 
 /* Maintenance procedure cards: laid out like the company's paper card */
 .mpc { display: grid; border: 2px solid var(--ink); border-radius: 6px; overflow: hidden; }

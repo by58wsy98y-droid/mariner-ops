@@ -71,8 +71,10 @@ export default function Md({ c, from, blocks }: { c: Corpus; from: string; block
               return figs.length > 1 ? <div key={i} className="figrow">{figs}</div> : <Fragment key={i}>{figs}</Fragment>;
             }
             // "a. ..." lines under a step sit indented, like the sub-items on the paper card
-            const sub = b.c[0]?.t === 'text' && /^[a-z][.)]\s/.test(b.c[0].v);
-            return <p key={i} className={sub ? 'sub' : undefined}>{inlines(c, from, b.c)}</p>;
+            // ("i." / "ii." under them sit one step further in)
+            const lead = b.c[0]?.t === 'text' ? b.c[0].v : '';
+            const cls = /^(ii|iii|iv|vi{0,3}|ix|x|i)[.)]\s/.test(lead) ? 'sub sub2' : /^[a-z][.)]\s/.test(lead) ? 'sub' : undefined;
+            return <p key={i} className={cls}>{inlines(c, from, b.c)}</p>;
           }
           case 'quote': return <blockquote key={i}>{inlines(c, from, b.c)}</blockquote>;
           case 'hr': return <hr key={i} />;
