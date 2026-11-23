@@ -49,9 +49,12 @@ export default function MpcCard({ c, doc }: { c: Corpus; doc: Doc }) {
   const steps = splitAt(blocks, 2);
   const cell = (label: string, value: string, cls = '') => value && <div className={`mpc-cell ${cls}`}><span className="mpc-label">{label}</span><b>{value}</b></div>;
 
-  const tasks = steps.flatMap((s) => splitAt(s.body, 3)).map((p) => p.head && TASK.exec(p.head.text)?.[1]).filter((n): n is string => !!n);
-  const [run, setRun] = useState<Run>(() => loadRun(doc.path));
-  useEffect(() => saveRun(doc.path, run), [doc.path, run]);
+  // A Technical Reference Card is read, not worked through: no tick boxes and no tick by tick.
+  const reference = /technical reference/i.test(f('card'));
+  const tasks = reference ? [] : steps.flatMap((s) => splitAt(s.body, 3)).map((p) => p.head && TASK.exec(p.head.text)?.[1]).filter((n): n is string => !!n);
+  const [stored, setRun] = useState<Run>(() => loadRun(doc.path));
+  const run = reference ? { on: false, ticked: {} as Run['ticked'] } : stored;
+  useEffect(() => { if (!reference) saveRun(doc.path, stored); }, [doc.path, stored, reference]);
   const done = tasks.filter((n) => run.ticked[n]).length;
   const next = tasks.find((n) => !run.ticked[n]);
   const tick = (n: string) => {
@@ -121,7 +124,7 @@ export default function MpcCard({ c, doc }: { c: Corpus; doc: Doc }) {
                     <div className="mpc-keep">
                     <div className="mpc-task-head">
                       <span className="mpc-num">{task[1]}</span>
-                      {run.on ? (
+                      {reference ? null : run.on ? (
                         <button className="mpc-tick" role="checkbox" aria-checked={!!run.ticked[task[1]]} aria-label={`Step ${task[1]}: ${task[2]}`} onClick={() => tick(task[1])}>
                           {run.ticked[task[1]] ? '☑' : '☐'}
                         </button>
