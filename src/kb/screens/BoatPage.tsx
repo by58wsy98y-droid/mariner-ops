@@ -1,6 +1,6 @@
 import { fmText } from '../frontmatter';
 import { isOpen, type Boat, type Corpus } from '../corpus';
-import { EDITING } from '../features';
+import { DAILY_LOGS_URL, EDITING } from '../features';
 import { KINDS, SPEC_LABEL, fleetHref, groups, modelOf, procedureFolders, proceduresFor, spec } from '../fleet';
 import { section } from '../markdown';
 import Md, { docHref } from '../Md';
@@ -62,7 +62,7 @@ function SpecSheet({ c, boat }: { c: Corpus; boat: Boat }) {
 export default function BoatPage({ slug }: { slug: string }) {
   const { corpus: c, store, save } = useKb();
   const boat = c.boats.find((b) => b.slug === slug);
-  if (!boat) return <section className="card"><h2>Boat not found</h2><p>No boat called “{slug}”. <a href="#/">Back to the fleet</a></p></section>;
+  if (!boat) return <section className="card"><h2>Boat not found</h2><p>No boat called “{slug}”. <a href="#/fleet">Back to the fleet</a></p></section>;
   const docs = c.docs.filter((d) => d.boat === slug);
   const issues = docs.filter((d) => d.type === 'issue').sort((a, b) => (b.date ?? '').localeCompare(a.date ?? ''));
   const open = issues.filter(isOpen);
@@ -77,7 +77,6 @@ export default function BoatPage({ slug }: { slug: string }) {
     <div className="screen">
       <section className="card">
         <h2 className="page-title">{boat.name}{spec(boat, 'propulsion') && <> <span className="chip prop">{spec(boat, 'propulsion')}</span></>}</h2>
-        {spec(boat, 'former_names') && <p className="muted">Formerly {spec(boat, 'former_names')}</p>}
         <SpecSheet c={c} boat={boat} />
         {Object.entries(boat.doc.fm).some(([k, v]) => !hidden(k, fmText(v)) && fmText(v)) && (
           <dl className="profile">
@@ -90,9 +89,11 @@ export default function BoatPage({ slug }: { slug: string }) {
           <p className="small muted">{[spec(boat, 'spec_source') && `From the ${spec(boat, 'spec_source')}`, spec(boat, 'last_updated') && `updated ${spec(boat, 'last_updated')}`].filter(Boolean).join(' · ')}</p>
         )}
         <div className="actions">
+          <a className="button" href={DAILY_LOGS_URL}>Daily logs</a>
           <a className="button secondary" href={`#/fuel/${slug}`}>Fuel log</a>
           <a className="button secondary" href={docHref(boat.doc.path)}>All boat notes</a>
         </div>
+        <p className="small muted">Daily logs open the Engine Room Log: pick {boat.name.replace(/^M\/V\s+/i, '')} there.</p>
       </section>
 
       {procs.length > 0 && (
@@ -143,7 +144,7 @@ export default function BoatPage({ slug }: { slug: string }) {
             const typed = prompt(`Delete ${boat.name} and ALL its files (systems, troubleshooting log, fuel logs, tank tables)? GitHub keeps the history. Type the word DELETE to confirm.`);
             if (typed?.trim().toUpperCase() !== 'DELETE') return;
             save({ kind: 'deleteDir', dir: `boats/${slug}/` }, `delete boat ${boat.name}`);
-            go('#/');
+            go('#/fleet');
           }}>Delete this boat</button>
         </div>
       </section>}

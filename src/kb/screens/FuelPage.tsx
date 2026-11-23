@@ -46,7 +46,7 @@ export default function FuelPage({ slug }: { slug: string }) {
     window.addEventListener('focus', check);
     return () => { document.removeEventListener('visibilitychange', check); window.removeEventListener('focus', check); };
   }, [date, untouched]);
-  if (!boat) return <section className="card"><h2>Boat not found</h2><a href="#/">Back</a></section>;
+  if (!boat) return <section className="card"><h2>Boat not found</h2><a href="#/fleet">Back</a></section>;
 
   const entry: FuelEntry = {
     date,
