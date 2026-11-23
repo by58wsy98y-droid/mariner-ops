@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { parseFrontmatter } from '../frontmatter';
 import { parseMarkdown, inlineText } from '../markdown';
 import { fileHref } from '../Md';
@@ -9,9 +8,7 @@ const size = (b: number) => (b > 1e6 ? `${(b / 1e6).toFixed(1)} MB` : `${Math.ma
 
 export default function Documents() {
   const { store, docsList: allDocs, save } = useKb();
-  const kept = allDocs.filter((d) => !store.isGone(d.path)); // documents, and pictures used on pages (kept for no signal too)
-  const docsList = kept.filter((d) => d.path.startsWith('docs/'));
-  const [msg, setMsg] = useState('');
+  const docsList = allDocs.filter((d) => d.path.startsWith('docs/') && !store.isGone(d.path));
   // Descriptions come from docs/README.md's table.
   const about = new Map<string, { what: string; made: string }>();
   const readme = store.view().get('docs/README.md');
@@ -19,17 +16,11 @@ export default function Documents() {
     for (const b of parseMarkdown(parseFrontmatter(readme).body))
       if (b.t === 'table') for (const r of b.rows) about.set(inlineText(r[0] ?? []).trim(), { what: inlineText(r[1] ?? []), made: inlineText(r[2] ?? []) });
   }
-  const keepAll = async () => {
-    setMsg('Saving documents on this device…');
-    let ok = 0;
-    for (const d of kept) { try { const r = await fetch(fileHref(d.path)); if (r.ok) { await r.blob(); ok++; } } catch { /* no signal */ } }
-    setMsg(ok === kept.length ? (docsList.length ? `All ${docsList.length} documents and the pictures on cards will open with no signal.` : 'The pictures on the cards will show with no signal.') : `Saved ${ok} of ${kept.length}. Try again with better signal for the rest.`);
-  };
   return (
     <div className="screen">
       <section className="card">
         <h2>Documents</h2>
-        <p className="small muted">Finished forms, guides, spreadsheets and photos. A document opens with no signal once it has been opened here once, or after “Keep all for no signal”.</p>
+        <p className="small muted">Finished forms, guides, spreadsheets and photos.</p>
         <div className="list">
           {docsList.map((d) => {
             const name = d.path.split('/').pop()!;
@@ -47,8 +38,6 @@ export default function Documents() {
           })}
         </div>
         {!docsList.length && <p className="muted">No documents yet. They go in the towboat-kb/docs/ folder on GitHub, with a line in docs/README.md saying what each one is.</p>}
-        <button className="secondary" onClick={keepAll}>{docsList.length ? 'Keep all for no signal' : 'Keep the card pictures for no signal'}</button>
-        {msg && <p className="small" role="status">{msg}</p>}
       </section>
     </div>
   );

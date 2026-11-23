@@ -17,9 +17,17 @@ fetch('kb-data.json')
   })
   .catch(() => {
     root.render(
-      <div className="boot"><h1>Marquette Engineering Knowledge Base</h1><p>Couldn't load the files. If this is the first time on this device, it needs signal once. Then reopen it.</p></div>
+      <div className="boot"><h1>Marquette Engineering Knowledge Base</h1><p>Couldn't load the files. Check the signal and reopen it.</p></div>
     );
   });
 
-if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
+// Older versions kept a copy on the phone for no signal. kb/sw.js now removes it on the phone's next visit; if this
+// page still finds one, it removes it itself: this site's kept files, then its helper.
+const site = new URL('..', location.href).href;
+const ours = (k: string) => k.startsWith('kb-') || k.startsWith('engine-log-') || k === 'fonts';
+navigator.serviceWorker?.getRegistration().then(async (r) => {
+  if (!r || !r.scope.startsWith(site)) return;
+  if ('caches' in window) for (const k of await caches.keys()) if (ours(k)) await caches.delete(k);
+  await r.unregister();
+}).catch(() => {});
 navigator.storage?.persist?.();

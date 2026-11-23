@@ -5,8 +5,8 @@
 The engineering department's knowledge base for Marquette Transportation Company's River Division fleet:
 each boat's spec sheet, the company's maintenance procedure and technical reference cards filed by the
 equipment they're for, each boat's troubleshooting log and fuel log, and search across all of it. It works on
-a phone with no signal once opened (add it to the home screen: iPhone Safari → Share → Add to Home Screen;
-Android Chrome → ⋮ → Add to Home screen) and prints the cards like the paper originals.
+a phone (add it to the home screen: iPhone Safari → Share → Add to Home Screen; Android Chrome → ⋮ → Add to
+Home screen) and prints the cards like the paper originals. It needs signal to open.
 
 The site is public, like this repository.
 
@@ -31,7 +31,7 @@ The site is public, like this repository.
 | `towboat-kb/` | **The content**: boats, procedure cards and their pictures, documents, templates (see `towboat-kb/README.md`) |
 | `src/kb/` | The app: `screens/` (one file per screen), `fleet.ts` (spec sheets, procedure folders), `search.ts`, `fuel.ts`, `markdown.ts`, `sync.ts` (saving to GitHub), `kb.css` (the Marquette look) |
 | `kb/index.html`, `public-site/` | The app's page, icons and logo; `public-site/index.html` forwards the site's top address to `kb/` |
-| `scripts/build-site.mjs` | Packs `towboat-kb/` into the site and writes the offline helper |
+| `scripts/build-site.mjs` | Packs `towboat-kb/` into the site, and removes the copies older versions kept on phones for no signal |
 | `.github/workflows/pages.yml` | Tests, builds and publishes the site every time `fuel-log-app` changes |
 
 ## For whoever maintains it

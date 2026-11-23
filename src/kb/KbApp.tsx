@@ -24,7 +24,6 @@ export interface Kb {
   index: Index;
   docsList: DocFile[];
   save: (op: Op, label: string) => void;
-  offline: 'ready' | 'preparing' | 'none';
 }
 
 const Ctx = createContext<Kb | null>(null);
@@ -44,27 +43,11 @@ function useRoute(): string[] {
   return hash.replace(/^#\/?/, '').split('/').filter(Boolean).map(fullyDecoded); // each part decoded once
 }
 
-function useOffline(): Kb['offline'] {
-  const sw = typeof navigator !== 'undefined' ? navigator.serviceWorker : undefined;
-  // Only this app's own helper counts (an old one higher up the site can be in charge until it's installed).
-  const mine = () => sw?.controller?.scriptURL === new URL('sw.js', location.href).href;
-  const [state, setState] = useState<Kb['offline']>(sw ? (mine() ? 'ready' : 'preparing') : 'none');
-  useEffect(() => {
-    const on = () => { if (mine()) setState('ready'); };
-    on(); // it may have taken over before this screen was up
-    sw?.addEventListener('controllerchange', on);
-    sw?.ready.then(on).catch(() => {});
-    return () => sw?.removeEventListener('controllerchange', on);
-  }, [sw]);
-  return state;
-}
-
 export default function KbApp({ store, docsList }: { store: KbStore; docsList: DocFile[] }) {
   const version = useSyncExternalStore((cb) => store.subscribe(cb), () => store.view());
   const status = store.status();
   const corpus = useMemo(() => buildCorpus([...version].map(([path, text]) => ({ path, text }))), [version]);
   const index = useMemo(() => buildIndex(corpus), [corpus]);
-  const offline = useOffline();
   const route = useRoute();
 
   useEffect(() => {
@@ -75,7 +58,7 @@ export default function KbApp({ store, docsList }: { store: KbStore; docsList: D
     return () => { window.removeEventListener('online', kick); document.removeEventListener('visibilitychange', kick); };
   }, [store]);
 
-  const kb: Kb = { store, corpus, index, docsList, offline, save: (op, label) => store.enqueue(op, label) };
+  const kb: Kb = { store, corpus, index, docsList, save: (op, label) => store.enqueue(op, label) };
   const [screen, a, ...rest] = route;
   let page;
   if (screen === 'boat' && a) page = <BoatPage slug={a} />;
@@ -109,7 +92,7 @@ export default function KbApp({ store, docsList }: { store: KbStore; docsList: D
                 </a>
               </h1>
             </div>
-            <SyncLine status={status} offline={offline} />
+            <SyncLine status={status} />
           </div>
         </header>
         <div className="print-brand">Marquette Transportation Company · Engineering Knowledge Base</div>
@@ -128,14 +111,12 @@ export default function KbApp({ store, docsList }: { store: KbStore; docsList: D
   );
 }
 
-function SyncLine({ status, offline }: { status: ReturnType<KbStore['status']>; offline: Kb['offline'] }) {
+function SyncLine({ status }: { status: ReturnType<KbStore['status']> }) {
   const parts: string[] = [];
   let cls = 'sync';
   if (status.error && status.pending) { cls += ' is-warn'; parts.push(`${status.pending} change${status.pending > 1 ? 's' : ''} kept on this device · ${status.error}`); }
   else if (!status.connected && status.pending) { cls += ' is-warn'; parts.push(`${status.pending} change${status.pending > 1 ? 's' : ''} kept on this device${GITHUB_SETUP ? ' · connect GitHub in Settings to save them' : ''}`); }
   else if (status.syncing || status.pending) parts.push('Saving to GitHub…');
   else if (status.lastSaved) parts.push('✓ Saved to GitHub');
-  if (offline === 'ready') parts.push('Opens with no signal');
-  if (offline === 'preparing') parts.push('Getting ready to open with no signal…');
   return parts.length ? <div className={cls}>{parts.join(' · ')}</div> : null;
 }
