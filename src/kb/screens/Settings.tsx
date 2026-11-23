@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useKb } from '../KbApp';
-import { EDITING } from '../features';
+import { EDITING, GITHUB_SETUP } from '../features';
 
 export default function Settings() {
   const { store } = useKb();
@@ -11,7 +11,7 @@ export default function Settings() {
   const pending = store.pendingList;
   return (
     <div className="screen">
-      <section className="card">
+      {GITHUB_SETUP && <section className="card">
         <h2>Saving to GitHub</h2>
         <p>
           {s.connected ? 'Connected. ' : 'Not connected yet. '}
@@ -46,7 +46,7 @@ export default function Settings() {
             setMsg(s.connected ? await store.testConnection() : 'Saved.');
           }}>Use these</button>
         </details>
-      </section>
+      </section>}
 
       <section className="card">
         <h2>Waiting to save <span className="count">{pending.length}</span></h2>

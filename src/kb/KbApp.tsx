@@ -15,7 +15,7 @@ import EditFile from './screens/EditFile';
 import Files from './screens/Files';
 import Fleet from './screens/Fleet';
 import { isKind } from './fleet';
-import { EDITING } from './features';
+import { EDITING, GITHUB_SETUP } from './features';
 
 export interface DocFile { path: string; size: number }
 export interface Kb {
@@ -132,7 +132,7 @@ function SyncLine({ status, offline }: { status: ReturnType<KbStore['status']>; 
   const parts: string[] = [];
   let cls = 'sync';
   if (status.error && status.pending) { cls += ' is-warn'; parts.push(`${status.pending} change${status.pending > 1 ? 's' : ''} kept on this device · ${status.error}`); }
-  else if (!status.connected && status.pending) { cls += ' is-warn'; parts.push(`${status.pending} change${status.pending > 1 ? 's' : ''} kept on this device · connect GitHub in Settings to save them`); }
+  else if (!status.connected && status.pending) { cls += ' is-warn'; parts.push(`${status.pending} change${status.pending > 1 ? 's' : ''} kept on this device${GITHUB_SETUP ? ' · connect GitHub in Settings to save them' : ''}`); }
   else if (status.syncing || status.pending) parts.push('Saving to GitHub…');
   else if (status.lastSaved) parts.push('✓ Saved to GitHub');
   if (offline === 'ready') parts.push('Opens with no signal');

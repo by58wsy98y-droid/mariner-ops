@@ -23,7 +23,7 @@ The site is public, like this repository.
 - **Docs**: finished documents to open or print.
 - **Saving to GitHub** (Settings): with a fine-grained GitHub token (this repository only, Contents: Read and
   write) new boats, fuel days (and a boat's fuel alert settings), troubleshooting entries, timeline rows and
-  status changes save back into the files as commits; with no signal they wait on the device. Editing and deleting are switched off for now (`EDITING` in `src/kb/features.ts`).
+  status changes save back into the files as commits; with no signal they wait on the device. Editing and deleting are switched off for now (`EDITING` in `src/kb/features.ts`), and so is the Settings box for entering the key (`GITHUB_SETUP`); a key already saved on a device keeps working.
 
 ## Where things are
 | | |
