@@ -30,7 +30,6 @@ export default function Welcome() {
       <section className="welcome-hero">
         <p className="welcome-kicker">River Division · Engineering</p>
         <h2 className="welcome-title">Welcome aboard</h2>
-        <p className="welcome-lead">Spec sheets, procedure cards and daily logs for the fleet, in one place.</p>
       </section>
       <a className="tile tile-main" href={DAILY_LOGS_URL}>
         <Icon name="logs" />

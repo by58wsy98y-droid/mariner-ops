@@ -77,7 +77,6 @@ export default function BoatPage({ slug }: { slug: string }) {
     <div className="screen">
       <section className="card">
         <h2 className="page-title">{boat.name}{spec(boat, 'propulsion') && <> <span className="chip prop">{spec(boat, 'propulsion')}</span></>}</h2>
-        {spec(boat, 'former_names') && <p className="muted">Formerly {spec(boat, 'former_names')}</p>}
         <SpecSheet c={c} boat={boat} />
         {Object.entries(boat.doc.fm).some(([k, v]) => !hidden(k, fmText(v)) && fmText(v)) && (
           <dl className="profile">

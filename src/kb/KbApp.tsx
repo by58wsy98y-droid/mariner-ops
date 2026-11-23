@@ -88,8 +88,8 @@ export default function KbApp({ store, docsList }: { store: KbStore; docsList: D
             <div className="top">
               <h1>
                 <a href="#/" className="home-link brand">
-                  <img className="brand-logo" src="marquette-canoe-white.png" alt="Marquette Transportation Company" width="214" height="172" />
-                  <span className="brand-title">Engineering Knowledge Base</span>
+                  <img className="brand-logo" src="marquette-logo-white.png" alt="Marquette Transportation Company" width="500" height="172" />
+                  <span className="brand-title">Engineering<br />Knowledge Base</span>
                 </a>
               </h1>
             </div>
