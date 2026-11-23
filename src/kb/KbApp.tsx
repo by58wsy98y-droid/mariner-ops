@@ -14,6 +14,7 @@ import Settings from './screens/Settings';
 import EditFile from './screens/EditFile';
 import Files from './screens/Files';
 import Fleet from './screens/Fleet';
+import Welcome from './screens/Welcome';
 import { isKind } from './fleet';
 import { EDITING, GITHUB_SETUP } from './features';
 
@@ -72,12 +73,12 @@ export default function KbApp({ store, docsList }: { store: KbStore; docsList: D
   else if (EDITING && screen === 'edit' && a) page = <EditFile key={[a, ...rest].join('/')} path={[a, ...rest].join('/')} />;
   else if (EDITING && screen === 'files') page = <Files />;
   else if (screen === 'search') page = <Home />;
-  else page = <Fleet kind={screen === 'fleet' && isKind(a) ? a : undefined} model={screen === 'fleet' && isKind(a) && rest.length ? rest.join('/') : undefined} />; // the fleet is where the app opens (a welcome page will go here)
-  const tab = screen === 'library' || screen === 'docs' ? screen
+  else if (!screen) page = <Welcome />; // where the app opens
+  else page = <Fleet kind={screen === 'fleet' && isKind(a) ? a : undefined} model={screen === 'fleet' && isKind(a) && rest.length ? rest.join('/') : undefined} />;
+  const tab = screen === 'library' || screen === 'docs' || screen === 'search' ? screen
     : (screen === 'doc' || screen === 'edit') && a === 'procedures' ? 'library'
-    : screen === 'settings' || screen === 'files' ? 'settings'
-    : screen === 'search' ? 'home'
-    : 'fleet'; // the fleet, boats and their pages (and the opening screen)
+    : !screen || screen === 'settings' || screen === 'files' ? 'home' // Settings is opened from the welcome page
+    : 'fleet'; // the fleet, boats and their pages
 
   return (
     <Ctx.Provider value={kb}>
@@ -87,8 +88,8 @@ export default function KbApp({ store, docsList }: { store: KbStore; docsList: D
             <div className="top">
               <h1>
                 <a href="#/" className="home-link brand">
-                  <img className="brand-logo" src="marquette-logo-white.png" alt="Marquette Transportation Company" width="500" height="172" />
-                  <span className="brand-title">Engineering<br />Knowledge Base</span>
+                  <img className="brand-logo" src="marquette-canoe-white.png" alt="Marquette Transportation Company" width="214" height="172" />
+                  <span className="brand-title">Engineering Knowledge Base</span>
                 </a>
               </h1>
             </div>
@@ -99,11 +100,11 @@ export default function KbApp({ store, docsList }: { store: KbStore; docsList: D
         <main className="wrap">{page}</main>
         <nav>
           <div className="wrap">
+            <button className={tab === 'home' ? 'on' : ''} onClick={() => go('#/')}>Home</button>
             <button className={tab === 'fleet' ? 'on' : ''} onClick={() => go('#/fleet')}>Fleet</button>
-            <button className={tab === 'home' ? 'on' : ''} onClick={() => go('#/search')}>Search</button>
+            <button className={tab === 'search' ? 'on' : ''} onClick={() => go('#/search')}>Search</button>
             <button className={tab === 'library' ? 'on' : ''} onClick={() => go('#/library')}>Library</button>
             <button className={tab === 'docs' ? 'on' : ''} onClick={() => go('#/docs')}>Docs</button>
-            <button className={tab === 'settings' ? 'on' : ''} onClick={() => go('#/settings')}>Settings</button>
           </div>
         </nav>
       </div>
