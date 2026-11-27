@@ -28,6 +28,7 @@ export default function Welcome() {
   return (
     <div className="screen welcome">
       <section className="welcome-hero">
+        <p className="welcome-kicker">River Division · Engineering</p>
         <h2 className="welcome-title">Welcome aboard</h2>
       </section>
       <a className="tile tile-main" href={DAILY_LOGS_URL}>
