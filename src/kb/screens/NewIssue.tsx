@@ -32,25 +32,24 @@ export default function NewIssue({ slug }: { slug: string }) {
       <section className="card">
         <div className="crumbs"><a href={`#/boat/${slug}`}>{boat.name}</a> · Troubleshooting log</div>
         <h2 className="page-title">New troubleshooting entry</h2>
-        <p className="small muted">Numbers over adjectives. Write down what was ruled out, not just what was found.</p>
-        <label htmlFor="ni-title">Short title<input id="ni-title" value={f.title} onChange={(e) => set('title', e.target.value)} placeholder="Port main ramps itself up with the lever untouched" /></label>
+        <label htmlFor="ni-title">Title<input id="ni-title" value={f.title} onChange={(e) => set('title', e.target.value)} /></label>
         <label htmlFor="ni-system">System
-          <input id="ni-system" list="ni-systems" value={f.system} onChange={(e) => set('system', e.target.value)} placeholder="steering, port main engine / EMDEC controls…" />
+          <input id="ni-system" list="ni-systems" value={f.system} onChange={(e) => set('system', e.target.value)} />
           <datalist id="ni-systems">{systems.map((s) => <option key={s} value={s} />)}</datalist>
         </label>
         <div className="grid3">
           <label htmlFor="ni-opened">Opened<input id="ni-opened" type="date" value={f.opened} onChange={(e) => set('opened', e.target.value)} /></label>
-          <label htmlFor="ni-status">Status<select id="ni-status" value={f.status} onChange={(e) => set('status', e.target.value)}>{STATUSES.map((s) => <option key={s}>{s}</option>)}</select></label>
-          <label htmlFor="ni-sev">Severity<select id="ni-sev" value={f.severity} onChange={(e) => set('severity', e.target.value)}><option>low</option><option>medium</option><option>high</option></select></label>
+          <label htmlFor="ni-status">Status<select id="ni-status" value={f.status} onChange={(e) => set('status', e.target.value)}>{STATUSES.map((s) => <option key={s} value={s}>{s.charAt(0) + s.slice(1).toLowerCase()}</option>)}</select></label>
+          <label htmlFor="ni-sev">Severity<select id="ni-sev" value={f.severity} onChange={(e) => set('severity', e.target.value)}><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option></select></label>
         </div>
-        <label htmlFor="ni-tags">Tags (comma separated)<input id="ni-tags" value={f.tags} onChange={(e) => set('tags', e.target.value)} placeholder="steering, rudder, diver" /></label>
-        <label htmlFor="ni-rep">Reported to<input id="ni-rep" value={f.reportedTo} onChange={(e) => set('reportedTo', e.target.value)} placeholder="port engineer (10/28)" /></label>
-        <label htmlFor="ni-sym">Symptoms<textarea id="ni-sym" rows={4} value={f.symptoms} onChange={(e) => set('symptoms', e.target.value)} placeholder="What it does, when, under what conditions. Panel/meter numbers. What's normal alongside it." /></label>
+        <label htmlFor="ni-tags">Tags<input id="ni-tags" value={f.tags} onChange={(e) => set('tags', e.target.value)} /></label>
+        <label htmlFor="ni-rep">Reported to<input id="ni-rep" value={f.reportedTo} onChange={(e) => set('reportedTo', e.target.value)} /></label>
+        <label htmlFor="ni-sym">Symptoms<textarea id="ni-sym" rows={4} value={f.symptoms} onChange={(e) => set('symptoms', e.target.value)} /></label>
         <div className="grid2">
-          <label htmlFor="ni-when">First timeline entry: when<input id="ni-when" value={f.when} onChange={(e) => set('when', e.target.value)} /></label>
+          <label htmlFor="ni-when">When<input id="ni-when" value={f.when} onChange={(e) => set('when', e.target.value)} /></label>
           <label htmlFor="ni-what">What happened<input id="ni-what" value={f.what} onChange={(e) => set('what', e.target.value)} /></label>
         </div>
-        <button className="big" onClick={create} disabled={!f.title.trim()}>Add to the troubleshooting log</button>
+        <button className="big" onClick={create} disabled={!f.title.trim()}>Save</button>
       </section>
     </div>
   );

@@ -115,9 +115,10 @@ export default function KbApp({ store, docsList }: { store: KbStore; docsList: D
 function SyncLine({ status }: { status: ReturnType<KbStore['status']> }) {
   const parts: string[] = [];
   let cls = 'sync';
-  if (status.error && status.pending) { cls += ' is-warn'; parts.push(`${status.pending} change${status.pending > 1 ? 's' : ''} kept on this device · ${status.error}`); }
-  else if (!status.connected && status.pending) { cls += ' is-warn'; parts.push(`${status.pending} change${status.pending > 1 ? 's' : ''} kept on this device${GITHUB_SETUP ? ' · connect GitHub in Settings to save them' : ''}`); }
-  else if (status.syncing || status.pending) parts.push('Saving to GitHub…');
-  else if (status.lastSaved) parts.push('✓ Saved to GitHub');
-  return parts.length ? <div className={cls}>{parts.join(' · ')}</div> : null;
+  if (status.error && status.pending) { cls += ' is-warn'; parts.push(`${status.pending} unsaved change${status.pending > 1 ? 's' : ''} · ${status.error}`); }
+  else if (!status.connected && status.pending) { cls += ' is-warn'; parts.push(`${status.pending} unsaved change${status.pending > 1 ? 's' : ''}${GITHUB_SETUP ? ' · connect GitHub in Settings to save them' : ''}`); }
+  else if (status.syncing || status.pending) parts.push('Saving…');
+  else if (status.lastSaved) parts.push('Saved');
+  if (!parts.length) return null;
+  return status.pending ? <a className={`${cls} home-link`} href="#/settings">{parts.join(' · ')}</a> : <div className={cls}>{parts.join(' · ')}</div>;
 }

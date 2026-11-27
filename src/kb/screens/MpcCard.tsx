@@ -76,7 +76,7 @@ export default function MpcCard({ c, doc }: { c: Corpus; doc: Doc }) {
   const finish = () => {
     if (open.length && !armed) { setArmed(true); return; }
     const at = clock(new Date().toISOString());
-    setFinished(open.length ? `Finished at ${at}, with step${open.length > 1 ? 's' : ''} ${open.join(', ')} not ticked.` : `Finished at ${at}: all ${tasks.length} steps ticked.`);
+    setFinished(`Finished at ${at}.`);
     setArmed(false);
     setRun({ on: false, ticked: {} });
     requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'smooth' }));
@@ -87,7 +87,7 @@ export default function MpcCard({ c, doc }: { c: Corpus; doc: Doc }) {
     {tasks.length > 0 && (run.on ? (
       <div className="mpc-run no-print" role="status">
         <div className="mpc-run-line">
-          <b>{done === tasks.length ? `All ${tasks.length} steps done` : `${done} of ${tasks.length} done${next ? ` · next: step ${next}` : ''}`}</b>
+          <b>{done === tasks.length ? 'All done' : `${done} of ${tasks.length} done`}</b>
           <span className="mpc-run-actions">
             <button className="secondary small-btn" onClick={() => setRun({ ...run, on: false })}>Stop</button>
           </span>
@@ -98,7 +98,7 @@ export default function MpcCard({ c, doc }: { c: Corpus; doc: Doc }) {
       <div className="actions no-print">
         {finished && <p className="small" role="status">{finished}</p>}
         <button onClick={() => { setFinished(''); setRun({ ...run, on: true }); if (next) requestAnimationFrame(() => document.getElementById(`task-${next}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })); }}>
-          {done ? `Carry on tick by tick (${done} of ${tasks.length} done)` : 'Follow tick by tick'}
+          {done ? `Continue (${done} of ${tasks.length} done)` : 'Follow tick by tick'}
         </button>
       </div>
     ))}
@@ -158,7 +158,7 @@ export default function MpcCard({ c, doc }: { c: Corpus; doc: Doc }) {
     </div>
     {run.on && tasks.length > 0 && (
       <div className="mpc-finish no-print">
-        {armed && <p className="warnbox">Step{open.length > 1 ? 's' : ''} {open.join(', ')} {open.length > 1 ? "aren't" : "isn't"} ticked. Tap Done again to finish anyway.</p>}
+        {armed && <p className="warnbox">{open.length} {open.length > 1 ? 'steps' : 'step'} not ticked.</p>}
         <button id="mpc-done" className="big" onClick={finish}>{armed ? 'Done anyway' : 'Done'}</button>
       </div>
     )}

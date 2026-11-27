@@ -33,14 +33,13 @@ export default function Fleet({ kind, model }: { kind?: Kind; model?: string }) 
                   {spec(b, 'propulsion') && <span className="chip prop">{spec(b, 'propulsion')}</span>}
                   {open > 0 && <span className="count small">{open} open</span>}
                 </span>
-                {spec(b, 'former_names') && <span className="docrow-meta">ex {spec(b, 'former_names')}</span>}
                 {line1.length > 0 && <span className="docrow-meta">{line1.map((x) => <span key={x}>{x}</span>)}</span>}
                 {line2.length > 0 && <span className="docrow-meta">{line2.map((x) => <span key={x}>{x}</span>)}</span>}
               </a>
             );
           })}
         </div>
-        {!shown.length && <p className="muted">{q.trim() ? `No boat matches “${q.trim()}”.` : `No boat in the fleet has ${model} yet.`}</p>}
+        {!shown.length && <p className="muted">{q.trim() ? `No boat matches “${q.trim()}”.` : `No boats with ${model}.`}</p>}
         <a className="button secondary" href="#/new-boat">+ Add a boat</a>
       </section>
     </div>

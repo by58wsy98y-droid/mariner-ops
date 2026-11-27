@@ -48,16 +48,16 @@ export default function Settings() {
         </details>
       </section>}
 
-      <section className="card">
-        <h2>Waiting to save <span className="count">{pending.length}</span></h2>
-        {pending.length ? (
+      {(pending.length > 0 || !store.storageOk) && <section className="card">
+        {pending.length > 0 && (
           <>
+            <h2>Waiting to save <span className="count">{pending.length}</span></h2>
             <ul className="plain waiting">
               {pending.map((q) => (
                 <li key={q.id}>
                   <span><span className="muted small">{new Date(q.at).toLocaleString()}</span> {q.label}</span>
                   <button className="secondary small-btn danger-text" onClick={() => {
-                    if (confirm(`Throw away “${q.label}”? It won't be saved to GitHub.`)) store.discard(q.id);
+                    if (confirm(`Discard “${q.label}”?`)) store.discard(q.id);
                   }}>Discard</button>
                 </li>
               ))}
@@ -65,11 +65,9 @@ export default function Settings() {
             {s.error && <p className="warnbox">{s.error}</p>}
             <button onClick={() => void store.sync()} disabled={!s.connected || s.syncing}>{s.syncing ? 'Saving…' : 'Save now'}</button>
           </>
-        ) : (
-          <p className="muted">Nothing waiting. {s.lastSaved ? `Last saved ${new Date(s.lastSaved).toLocaleString()}.` : ''}</p>
         )}
-        {!store.storageOk && <p className="warnbox">This browser isn't keeping changes (storage blocked or full). Keep the page open until they're saved.</p>}
-      </section>
+        {!store.storageOk && <p className="warnbox">This browser can't store changes. Keep the page open until they're saved.</p>}
+      </section>}
 
       {EDITING && <section className="card">
         <h2>All files</h2>
@@ -78,8 +76,8 @@ export default function Settings() {
       </section>}
 
       <section className="card">
-        <h2>This copy</h2>
-        <p className="small">Published {new Date(store.builtAt).toLocaleString()}. Edits saved since then show from this device until the next publish picks them up.</p>
+        <h2>Settings</h2>
+        <p className="small muted">Updated {new Date(store.builtAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
       </section>
     </div>
   );

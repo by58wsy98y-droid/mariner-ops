@@ -27,10 +27,9 @@ export default function Home() {
   return (
     <div className="screen">
       <section className="card">
-        <label htmlFor="q">Search every boat
-          <input id="q" type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="ramping, fork terminal, gravitate…" autoComplete="off" autoFocus />
+        <label htmlFor="q">Search
+          <input id="q" type="search" value={q} onChange={(e) => setQ(e.target.value)} autoComplete="off" autoFocus />
         </label>
-        <p className="small muted">Finds what was found and fixed on any boat, plus procedures and notes. Each result shows the boat it came from and its engines.</p>
         {topTags.length > 0 && <div className="chips" aria-label="Filter by tag">
           {topTags.map((t) => (
             <button key={t} className={`chip-btn${tags.includes(t) ? ' on' : ''}`} onClick={() => setTags(tags.includes(t) ? tags.filter((x) => x !== t) : [...tags, t])}>
@@ -52,7 +51,7 @@ export default function Home() {
             </section>
           ))
         ) : (
-          <section className="card"><p>Nothing found for “{q}”{tags.length ? ` with ${tags.join(', ')}` : ''}. Try fewer words or a different spelling.</p></section>
+          <section className="card"><p>No results for “{q}”{tags.length ? ` with ${tags.join(', ')}` : ''}.</p></section>
         )
       ) : null}
     </div>

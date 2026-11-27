@@ -1,7 +1,7 @@
 {
   "name": "Marquette Engineering Knowledge Base",
   "short_name": "Marquette KB",
-  "description": "Marquette Transportation Company engineering knowledge base: fleet, systems, issues, fuel logs and procedures",
+  "description": "Marquette Transportation Company engineering knowledge base",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

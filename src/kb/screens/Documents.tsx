@@ -20,7 +20,6 @@ export default function Documents() {
     <div className="screen">
       <section className="card">
         <h2>Documents</h2>
-        <p className="small muted">Finished forms, guides, spreadsheets and photos.</p>
         <div className="list">
           {docsList.map((d) => {
             const name = d.path.split('/').pop()!;

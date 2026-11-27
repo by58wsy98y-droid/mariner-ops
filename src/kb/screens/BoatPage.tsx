@@ -13,7 +13,7 @@ const LABELS: Record<string, string> = {
   spec_note: 'Note', fuel_capacity_full: 'Usual fuel top-off', fuel_capacity_gal: 'Capacity for truck alerts (gal)', truck_load_gal: 'Truck load (gal)',
 };
 // shown elsewhere on the page (the spec sheet, the title, the footer line)
-const SHOWN = new Set(['boat', 'division', 'spec_source', 'last_updated', ...Object.keys(SPEC_LABEL)]);
+const SHOWN = new Set(['boat', 'division', 'spec_source', 'spec_note', 'last_updated', ...Object.keys(SPEC_LABEL)]);
 // every boat here is Marquette's: the company line only shows when it says something else
 const hidden = (k: string, v: string) => SHOWN.has(k) || (k === 'company' && /^marquette\b/i.test(v.trim()));
 const STATS = ['gross_tons', 'net_tons', 'fuel_capacity', 'lube_capacity', 'height', 'eye_level', 'hull_depth'];
@@ -43,7 +43,7 @@ function SpecSheet({ c, boat }: { c: Corpus; boat: Boat }) {
                 <span className="spec-label">{r.label}</span>
                 <span className="spec-val">
                   {r.text.split(' / ').map((line) => <span key={line} className="spec-line">{line}</span>)}
-                  {r.kind && model && n > 1 && <a className="small" href={fleetHref(r.kind, model)}>{model}: {n} boats in the fleet →</a>}
+                  {r.kind && model && n > 1 && <a className="small" href={fleetHref(r.kind, model)}>{n} boats with {model} →</a>}
                 </span>
               </div>
             );
@@ -85,15 +85,10 @@ export default function BoatPage({ slug }: { slug: string }) {
             ))}
           </dl>
         )}
-        {(spec(boat, 'spec_source') || spec(boat, 'last_updated')) && (
-          <p className="small muted">{[spec(boat, 'spec_source') && `From the ${spec(boat, 'spec_source')}`, spec(boat, 'last_updated') && `updated ${spec(boat, 'last_updated')}`].filter(Boolean).join(' · ')}</p>
-        )}
         <div className="actions">
           <a className="button" href={DAILY_LOGS_URL}>Daily logs</a>
           <a className="button secondary" href={`#/fuel/${slug}`}>Fuel log</a>
-          <a className="button secondary" href={docHref(boat.doc.path)}>All boat notes</a>
         </div>
-        <p className="small muted">Daily logs open the Engine Room Log: pick {boat.name.replace(/^M\/V\s+/i, '')} there.</p>
       </section>
 
       {procs.length > 0 && (
@@ -123,14 +118,16 @@ export default function BoatPage({ slug }: { slug: string }) {
         </section>
       )}
 
-      <section className="card">
-        <h2>Fuel</h2>
-        {last && (
-          <p>Last logged {last.date}: <b>{last.fuel?.toLocaleString('en-US') ?? '—'} gal</b> on hand{last.used != null ? `, ${last.used.toLocaleString('en-US')} used` : ''}.</p>
-        )}
-        <div className="list">{fuelDocs.map((d) => <DocRow key={d.path} c={c} d={d} showBoat={false} />)}</div>
-        <a className="button secondary" href={`#/fuel/${slug}`}>Open the fuel log</a>
-      </section>
+      {(last || fuelDocs.length > 0) && (
+        <section className="card">
+          <h2>Fuel</h2>
+          {last && (
+            <p>Last logged {last.date}: <b>{last.fuel?.toLocaleString('en-US') ?? '—'} gal</b> on hand{last.used != null ? `, ${last.used.toLocaleString('en-US')} used` : ''}.</p>
+          )}
+          <div className="list">{fuelDocs.map((d) => <DocRow key={d.path} c={c} d={d} showBoat={false} />)}</div>
+          <a className="button secondary" href={`#/fuel/${slug}`}>Open the fuel log</a>
+        </section>
+      )}
 
 
 

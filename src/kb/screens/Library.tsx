@@ -37,7 +37,6 @@ export default function Library({ at }: { at: string[] }) {
             {above.map((x) => <span key={x.slug}> · <a href={`#/library/procedures/${x.slug}`}>{x.name}</a></span>)}
           </div>
           <h2 className="page-title">{f?.name ?? path}</h2>
-          {f?.slug === 'general' && <p className="small muted">Equipment every boat has. These show on every boat's page.</p>}
           {f?.children && <div className="folders">{f.children.map(row)}</div>}
           {(f?.docs.length ?? 0) > 0 && <div className="list">{f!.docs.map((d) => <DocRow key={d.path} c={c} d={d} showFolder={false} />)}</div>}
           {!f && <p className="muted">There's no folder called {path}.</p>}
@@ -63,7 +62,7 @@ export default function Library({ at }: { at: string[] }) {
       <section className="card">
         <h2 className="page-title">Library</h2>
         <div className="folders">
-          <FolderRow href="#/library/procedures" name="Procedures" note="General equipment, engines and generators" count={total} />
+          <FolderRow href="#/library/procedures" name="Procedures" count={total} />
         </div>
       </section>
     </div>

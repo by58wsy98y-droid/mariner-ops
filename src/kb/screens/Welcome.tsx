@@ -22,13 +22,12 @@ export default function Welcome() {
   const tiles: { href: string; icon: keyof typeof ICONS; name: string; note: string }[] = [
     { href: '#/fleet', icon: 'fleet', name: 'Fleet', note: `${c.boats.length} boats` },
     { href: '#/library/procedures', icon: 'procedures', name: 'Procedures', note: `${cards} cards` },
-    { href: '#/search', icon: 'search', name: 'Search', note: 'Every boat and card' },
-    { href: '#/docs', icon: 'docs', name: 'Documents', note: docs ? `${docs} documents` : 'Forms and guides' },
+    { href: '#/search', icon: 'search', name: 'Search', note: '' },
+    { href: '#/docs', icon: 'docs', name: 'Documents', note: docs ? `${docs} documents` : '' },
   ];
   return (
     <div className="screen welcome">
       <section className="welcome-hero">
-        <p className="welcome-kicker">River Division · Engineering</p>
         <h2 className="welcome-title">Welcome aboard</h2>
       </section>
       <a className="tile tile-main" href={DAILY_LOGS_URL}>
@@ -40,14 +39,11 @@ export default function Welcome() {
         {tiles.map((t) => (
           <a key={t.href} className="tile" href={t.href}>
             <Icon name={t.icon} />
-            <span className="tile-text"><b>{t.name}</b><span>{t.note}</span></span>
+            <span className="tile-text"><b>{t.name}</b>{t.note && <span>{t.note}</span>}</span>
           </a>
         ))}
       </div>
-      <p className="welcome-foot">
-        <a href="#/settings">Settings</a>
-        <span>Updated {new Date(store.builtAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
-      </p>
+      <p className="welcome-foot">Updated {new Date(store.builtAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
     </div>
   );
 }

@@ -102,9 +102,9 @@ export default function FuelPage({ slug }: { slug: string }) {
           <span className="small muted">
             {saved
               ? saved.detail
-                ? 'Already logged: change and save to replace it.'
-                : `Logged in the month table: ${gal(saved.fuel)} gal on hand${saved.used != null ? `, ${gal(saved.used)} used` : ''}. The soundings weren't recorded in the app; enter them to replace that row. Received, water and notes are filled in from it, and its lube total is under Port L/O.`
-              : prev ? `Previous: ${prev.date}, ${gal(prev.fuel)} gal` : 'First day for this boat.'}
+                ? 'Already logged.'
+                : `Already logged: ${gal(saved.fuel)} gal on hand${saved.used != null ? `, ${gal(saved.used)} used` : ''}.`
+              : prev ? `Previous: ${prev.date}, ${gal(prev.fuel)} gal` : ''}
           </span>
         </div>
       </section>
@@ -114,7 +114,6 @@ export default function FuelPage({ slug }: { slug: string }) {
       {tanks.length > 0 && (
         <section className="card">
           <h2>Soundings (inches)</h2>
-          <p className="small muted">91.5 is fine: half inches are worked out between the table lines.</p>
           <div className="tankgrid">
             {(['P', 'S'] as const).map((s) => (
               <div key={s} className="tankcol">
@@ -137,8 +136,7 @@ export default function FuelPage({ slug }: { slug: string }) {
           <Row label="Used" value={gal(calc.used)} warn={calc.used != null && calc.used < 0} />
           <Row label="Room to full" value={gal(calc.room)} />
         </div>
-        {!settings.capacity && <p className="small muted">Set the full capacity under “Alerts for this boat” to see room to full and truck alerts.</p>}
-        {calc.used != null && calc.used < 0 && <p className="warnbox">Used is negative: did fuel come aboard? Enter it under Received.</p>}
+        {calc.used != null && calc.used < 0 && <p className="warnbox">Used is negative. Did fuel come aboard?</p>}
       </section>
 
       <section className="card">
@@ -168,10 +166,10 @@ export default function FuelPage({ slug }: { slug: string }) {
       </section>
 
       <section className="card">
-        <label htmlFor="notes">Notes<textarea id="notes" rows={2} value={form.notes ?? ''} onChange={(e) => set('notes', e.target.value)} placeholder="Fueled before sounding; 3s then 4s" /></label>
+        <label htmlFor="notes">Notes<textarea id="notes" rows={2} value={form.notes ?? ''} onChange={(e) => set('notes', e.target.value)} /></label>
         {calc.bad.length > 0 && <p className="warnbox">Past the end of the tank table: {calc.bad.join(', ')}. Check the sounding.</p>}
         {unread.length > 0 && <p className="warnbox">Can't read {unread.join(', ')}: type plain numbers, e.g. 90.5 for 90½.</p>}
-        <button className="big" onClick={doSave} disabled={!canSave}>{saved ? `Save changes to ${date}` : `Save ${date}`}</button>
+        <button className="big" onClick={doSave} disabled={!canSave}>{saved ? 'Save changes' : 'Save'}</button>
         {EDITING && saved && <button className="secondary danger-text" onClick={doDelete}>Delete this day</button>}
         {msg && <p className="small" role="status">{msg}</p>}
       </section>
@@ -256,8 +254,7 @@ function FuelSettings({ slug, capacity, truck, boatPath }: { slug: string; capac
   const changed = num(cap) !== capacity || num(tr) !== truck;
   return (
     <section className="card">
-      <h2>Alerts for this boat</h2>
-      <p className="small muted">Room for 1 truck when on hand is at or below capacity − 1 load; room for 2 at capacity − 2 loads. Saved in boat.md.</p>
+      <h2>Truck alerts</h2>
       <div className="grid2">
         <label htmlFor={`cap-${slug}`}>Full capacity (gal)<input id={`cap-${slug}`} inputMode="numeric" value={cap} onChange={(e) => { setCap(e.target.value); setMsg(''); }} /></label>
         <label htmlFor={`truck-${slug}`}>Truck load (gal)<input id={`truck-${slug}`} inputMode="numeric" value={tr} onChange={(e) => { setTr(e.target.value); setMsg(''); }} /></label>
@@ -266,7 +263,7 @@ function FuelSettings({ slug, capacity, truck, boatPath }: { slug: string; capac
         if (num(cap) !== capacity) save({ kind: 'field', path: boatPath, key: 'fuel_capacity_gal', value: String(num(cap)) }, `fuel capacity ${num(cap)}`);
         if (num(tr) !== truck) save({ kind: 'field', path: boatPath, key: 'truck_load_gal', value: String(num(tr)) }, `truck load ${num(tr)}`);
         setMsg(`Saved: alerts use ${gal(num(cap))} gal full and ${gal(num(tr))} gal trucks.`);
-      }}>Save alert settings</button>
+      }}>Save</button>
       {msg && <p className="small" role="status">{msg}</p>}
     </section>
   );
