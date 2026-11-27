@@ -67,21 +67,17 @@ export default function DocPage({ path }: { path: string }) {
         </div>
       </section>
 
-      {doc.type === 'issue' && (
+      {doc.type === 'issue' && similar.length > 0 && (
         <section className="card no-print">
           <h2>Similar troubleshooting on any boat</h2>
-          {similar.length ? (
-            <div className="list">
-              {similar.map((s) => (
-                <div key={s.doc.path}>
-                  <DocRow c={c} d={s.doc} />
-                  <div className="small muted shared">In common: {s.shared.join(', ')}</div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="muted">No other entry shares a tag or the system with this one yet.</p>
-          )}
+          <div className="list">
+            {similar.map((s) => (
+              <div key={s.doc.path}>
+                <DocRow c={c} d={s.doc} />
+                <div className="small muted shared">In common: {s.shared.join(', ')}</div>
+              </div>
+            ))}
+          </div>
         </section>
       )}
     </div>

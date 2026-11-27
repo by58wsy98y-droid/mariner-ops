@@ -48,7 +48,6 @@ export default function NewBoat() {
           </label>
         ))}
         <button className="big" onClick={create} disabled={!name.trim() || taken}>Add boat</button>
-        <p className="small muted">Tank tables: in GitHub, upload one CSV per tank to boats/{slug || '<name>'}/fuel/tank-tables/ named tank-2.csv, tank-3.csv… with two columns, inches,gallons. One file serves port and starboard; name them tank-2p.csv / tank-2s.csv if the sides differ.</p>
       </section>
     </div>
   );

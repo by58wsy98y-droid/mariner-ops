@@ -40,7 +40,6 @@ export default function Library({ at }: { at: string[] }) {
           {f?.slug === 'general' && <p className="small muted">Equipment every boat has. These show on every boat's page.</p>}
           {f?.children && <div className="folders">{f.children.map(row)}</div>}
           {(f?.docs.length ?? 0) > 0 && <div className="list">{f!.docs.map((d) => <DocRow key={d.path} c={c} d={d} showFolder={false} />)}</div>}
-          {f && !f.children && !f.docs.length && <p className="muted">No procedures in this folder yet.</p>}
           {!f && <p className="muted">There's no folder called {path}.</p>}
         </section>
       </div>

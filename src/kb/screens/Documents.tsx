@@ -37,7 +37,6 @@ export default function Documents() {
             );
           })}
         </div>
-        {!docsList.length && <p className="muted">No documents yet. They go in the towboat-kb/docs/ folder on GitHub, with a line in docs/README.md saying what each one is.</p>}
       </section>
     </div>
   );

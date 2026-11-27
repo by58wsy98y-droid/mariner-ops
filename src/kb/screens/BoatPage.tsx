@@ -113,22 +113,20 @@ export default function BoatPage({ slug }: { slug: string }) {
       <section className="card">
         <h2>Troubleshooting log <span className="count">{open.length ? `${open.length} open · ` : ''}{issues.length} {issues.length === 1 ? 'entry' : 'entries'}</span></h2>
         <div className="list">{[...open, ...issues.filter((d) => !isOpen(d))].map((d) => <DocRow key={d.path} c={c} d={d} showBoat={false} />)}</div>
-        {!issues.length && <p className="muted">Nothing logged yet.</p>}
         <a className="button" href={`#/new-issue/${slug}`}>+ New troubleshooting entry</a>
       </section>
 
-      <section className="card">
-        <h2>Systems</h2>
-        <div className="list">{systems.map((d) => <DocRow key={d.path} c={c} d={d} showBoat={false} />)}</div>
-        {!systems.length && <p className="muted">No system notes yet. Add a file under boats/{slug}/systems/ in GitHub.</p>}
-      </section>
+      {systems.length > 0 && (
+        <section className="card">
+          <h2>Systems</h2>
+          <div className="list">{systems.map((d) => <DocRow key={d.path} c={c} d={d} showBoat={false} />)}</div>
+        </section>
+      )}
 
       <section className="card">
         <h2>Fuel</h2>
-        {last ? (
+        {last && (
           <p>Last logged {last.date}: <b>{last.fuel?.toLocaleString('en-US') ?? '—'} gal</b> on hand{last.used != null ? `, ${last.used.toLocaleString('en-US')} used` : ''}.</p>
-        ) : (
-          <p className="muted">No fuel days logged yet.</p>
         )}
         <div className="list">{fuelDocs.map((d) => <DocRow key={d.path} c={c} d={d} showBoat={false} />)}</div>
         <a className="button secondary" href={`#/fuel/${slug}`}>Open the fuel log</a>

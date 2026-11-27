@@ -107,7 +107,6 @@ export default function FuelPage({ slug }: { slug: string }) {
               : prev ? `Previous: ${prev.date}, ${gal(prev.fuel)} gal` : 'First day for this boat.'}
           </span>
         </div>
-        {!tanks.length && <p className="warnbox">This boat has no tank tables yet. Add them in GitHub as boats/{slug}/fuel/tank-tables/tank-2.csv (columns: inches,gallons).</p>}
       </section>
 
       {alert && <div className="banner truck" role="alert"><div><strong>{alert}</strong><div className="small">On hand {gal(calc.total)} · room to full {gal(calc.room)} · capacity {gal(settings.capacity)}</div></div></div>}
